@@ -45,14 +45,6 @@ def c (img) :
 #d (img)
 #d (d_circles (img, hough_circles(img)))
 #d (d_circles (img, hough_circles (canny(img))))
-#d(canny(img))
-
-
-def get_frame () :
-    if camera.isOpened() == True:
-        retval, img = camera.read()
-        return img
-    return False
 
 
 def main () :
@@ -70,10 +62,6 @@ def main () :
     camera.release
 
 main()
-
-
-d (c (img))
-
 
 
 

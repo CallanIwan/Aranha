@@ -6,7 +6,7 @@ class Core:
         Vision().findBalloon(0)
 
     def run(self):
-        print ('works')
+        Vision().run()
 
     #1) probeer kleurvolgorde te vinden van kaartje. 2) rape ballonnen
     def setVisionState(self, state):
@@ -17,3 +17,4 @@ class Core:
         print 'a'
 
 core = Core()
+core.run()
