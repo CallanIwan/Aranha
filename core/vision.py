@@ -71,7 +71,8 @@ def gauss(img):
 
 def greenOnly(img):
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV, 3)
-    filtered = cv2.inRange(hsv, (20, 70, 70), (110, 220, 220))
+    #filtered = cv2.inRange(hsv, (20, 70, 70), (110, 220, 220))
+    filtered = cv2.inRange(hsv, (40, 70, 70), (90, 220, 220))
 
     draw_histogram(hsv)
     return toColor(filtered)

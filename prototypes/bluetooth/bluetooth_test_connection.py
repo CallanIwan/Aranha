@@ -1,6 +1,6 @@
 import bluetooth
 
-target_name = "My Phone"
+target_name = "M-Bwoi"
 target_address = None
 
 nearby_devices = bluetooth.discover_devices()
