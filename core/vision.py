@@ -32,21 +32,14 @@ class Camera:
             c = canny(frame)
             #cv2.imshow("preview", d_circles(toColor(c), hough_circles(c)))
             cv2.imshow("vanilla", frame)
-            cv2.imshow("gauss", gauss(frame))
-            cv2.imshow("redOnly", redOnly(frame))
-
+            #cv2.imshow("redOnly", redOnly(frame))
+            cv2.imshow("greenOnly", greenOnly(frame))
             rval, frame = self.camera.read()
             key = cv2.waitKey(20)
             if key == 27: # exit on ESC
                 break
         cv2.destroyWindow("preview")
         self.camera.release()
-
-
-
-
-
-
 
 
 def canny (img) :
@@ -75,28 +68,35 @@ def toGray(img):
 def gauss(img):
     return cv2.GaussianBlur(img, (9, 9), 4);
 
+def greenOnly(img):
+    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV, 3)
+    filtered = cv2.inRange(hsv, (0, 100, 100), (18, 255, 255))
+    return toColor(filtered)
+
 def redOnly(img):
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV, 3)
+    filtered = cv2.inRange(hsv, (0, 100, 100), (18, 255, 255))
+    filtered2 = cv2.inRange(hsv, (170, 80, 80), (255, 255, 255))
+    t = cv2.add(filtered, filtered2)
+
     draw_histogram(hsv)
-    #hue = cv2.extractChannel(hsv, 0)
-    #retval, filtered = cv2.threshold(hue, 40, 255, cv2.THRESH_TOZERO)
+    return toColor(t)
 
-    filtered = cv2.inRange(hsv, (120, 80, 80), (255, 255, 255))
-    #return filtered
-
-    return toColor(filtered)
 
 
 
 def draw_histogram(img):
-    plt.hist(img.ravel(),256,[0,256])
-    plt.show()
+    hsv_map = np.zeros((180, 256, 3), np.uint8)
+    h, s = np.indices(hsv_map.shape[:2])
+    hsv_map[:,:,0] = h
+    hsv_map[:,:,1] = s
+    hsv_map[:,:,2] = 255
+    hsv_map = cv2.cvtColor(hsv_map, cv2.COLOR_HSV2BGR)
 
-def draw_histogram2(img):
-    color = ('b','g','r')
-    for i,col in enumerate(color):
-        histr = cv2.calcHist([img],[i],None,[256],[0,256])
-        plt.plot(histr,color = col)
-        plt.xlim([0,256])
-    plt.show()
+    hsv = img#cv2.cvtColor(img, cv2.CV_BGR2HSV );
+    h = cv2.calcHist( [hsv], [0, 1], None, [180, 256], [0, 180, 0, 256] )
+    hist_scale = 10
 
+    h = np.clip(h*0.005*hist_scale, 0, 1)
+    vis = hsv_map*h[:,:,np.newaxis] / 255.0
+    cv2.imshow('hist', vis)
