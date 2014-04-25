@@ -1,17 +1,19 @@
 import cv2
 import cv2.cv as cv
 import numpy as np
+from matplotlib import pyplot as plt
+
 
 class Vision:
     def run(self):
         Camera().display()
-        print 'a'
+        print ('a')
 
     def findBalloon(self, color):
-        print 'vision works'
+        print ('vision works')
 
     def findBalloonOrder(self):
-        print 'a'
+        print ('a')
 
 
 class Camera:
@@ -29,7 +31,9 @@ class Camera:
             #cv2.imshow("preview", canny(frame))
             c = canny(frame)
             #cv2.imshow("preview", d_circles(toColor(c), hough_circles(c)))
-            cv2.imshow("preview", butRed(frame))
+            cv2.imshow("vanilla", frame)
+            cv2.imshow("gauss", gauss(frame))
+            cv2.imshow("redOnly", redOnly(frame))
 
             rval, frame = self.camera.read()
             key = cv2.waitKey(20)
@@ -68,11 +72,31 @@ def toColor(img):
 def toGray(img):
     return cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
 
+def gauss(img):
+    return cv2.GaussianBlur(img, (9, 9), 4);
 
-def butRed(img):
-    hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV, 3)
+def redOnly(img):
+    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV, 3)
+    draw_histogram(hsv)
     #hue = cv2.extractChannel(hsv, 0)
-    #retval, filtered = cv2.threshold(hue, 150, 255, cv2.THRESH_BINARY)
-    filtered = cv2.inRange(hsv, (120, 100, 150), (255, 255, 255))
-    return filtered
+    #retval, filtered = cv2.threshold(hue, 40, 255, cv2.THRESH_TOZERO)
+
+    filtered = cv2.inRange(hsv, (120, 80, 80), (255, 255, 255))
+    #return filtered
+
+    return toColor(filtered)
+
+
+
+def draw_histogram(img):
+    plt.hist(img.ravel(),256,[0,256])
+    plt.show()
+
+def draw_histogram2(img):
+    color = ('b','g','r')
+    for i,col in enumerate(color):
+        histr = cv2.calcHist([img],[i],None,[256],[0,256])
+        plt.plot(histr,color = col)
+        plt.xlim([0,256])
+    plt.show()
 
