@@ -30,10 +30,11 @@ class Camera:
         while rval:
             #cv2.imshow("preview", canny(frame))
             c = canny(frame)
-            #cv2.imshow("preview", d_circles(toColor(c), hough_circles(c)))
-            cv2.imshow("vanilla", frame)
-            #cv2.imshow("redOnly", redOnly(frame))
-            cv2.imshow("greenOnly", greenOnly(frame))
+            m = cv2.medianBlur(frame, 11)
+            cv2.putText(frame, getDirection(frame, 'green'), (0, 200), cv2.FONT_HERSHEY_SIMPLEX, 1, 255)
+            #cv2.imshow("vanilla", frame)
+            cv2.imshow("test", frame)
+
             rval, frame = self.camera.read()
             key = cv2.waitKey(20)
             if key == 27: # exit on ESC
@@ -70,19 +71,48 @@ def gauss(img):
 
 def greenOnly(img):
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV, 3)
-    filtered = cv2.inRange(hsv, (0, 100, 100), (18, 255, 255))
+    filtered = cv2.inRange(hsv, (20, 70, 70), (110, 220, 220))
+
+    draw_histogram(hsv)
     return toColor(filtered)
 
 def redOnly(img):
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV, 3)
-    filtered = cv2.inRange(hsv, (0, 100, 100), (18, 255, 255))
-    filtered2 = cv2.inRange(hsv, (170, 80, 80), (255, 255, 255))
+    filtered = cv2.inRange(hsv, (0, 120, 120), (8, 255, 255))
+    filtered2 = cv2.inRange(hsv, (170, 120, 120), (255, 255, 255))
     t = cv2.add(filtered, filtered2)
 
     draw_histogram(hsv)
     return toColor(t)
 
+def blueOnly(img):
+    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV, 3)
+    filtered = cv2.inRange(hsv, (70, 100, 100), (140, 255, 255))
+    draw_histogram(hsv)
+    return toColor(filtered)
 
+def getDirection(img, color):
+    if color == 'blue':
+        filtered = blueOnly(img)
+    elif color == 'red':
+        filtered = redOnly(img)
+    elif color == 'green':
+        filtered = greenOnly(img)
+
+    cv2.imshow("as", filtered)
+    #if most of the blobs are in the left section, consider left
+
+    sumLeft = cv2.sumElems(filtered[:,:400])[0]
+    sumRight = cv2.sumElems(filtered[:,400:])[0]
+    sumBoth = sumLeft + sumRight
+    if sumBoth > 20000000:
+        return 'forward' + `sumBoth`
+    elif sumLeft > 2000000:
+        return 'left ' + `sumLeft`
+    elif sumRight > 2000000:
+        return 'right' + `sumRight`
+    else:
+        return 'nothing'
 
 
 def draw_histogram(img):
