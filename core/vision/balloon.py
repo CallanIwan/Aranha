@@ -1,3 +1,8 @@
+"""
+vision/balloon.py
+Find a balloon <insert more info>
+"""
+
 import SimpleCV
 import cv2
 import numpy as np
@@ -6,44 +11,28 @@ width = 640
 height = 480
 cv2.namedWindow("test")
 whichColor = 'red'
+disp = SimpleCV.Display()
 
 
-class Vision:
-    def run(self):
-        Camera2().display()
-        print ('a')
+def find(cam, color):
 
-    def findBalloon(self, color):
-        print ('vision works')
+    cv2.createTrackbar("track1", "test", 1, 255, id)
+    cv2.createTrackbar("track2", "test", 1, 255, id)
+    cv2.createTrackbar("track3", "test", 1, 255, id)
 
-    def findBalloonOrder(self):
-        print ('a')
+    while disp.isNotDone():
+        frame = cam.getImage()
+        median = frame.medianFilter(3)
+        #redOnly(median).threshold(40).show()
+        dir = getDirection(median, whichColor)
+        print dir
+        median.drawText(dir, x=-10, color=SimpleCV.Color.CRIMSON, fontsize=84)
+        #median.show()
+        median.save(disp)  # show() does not work correct
+        #cv2.imshow("test1", greenOnly(median).getNumpyCv2())
+        #cv2.imshow("test2", redOnly(median).getNumpyCv2())
+        #a = frame.drawText("works 1234, 1234")
 
-class Camera2:
-    def display(self):
-        cv2.createTrackbar("track1", "test", 1, 255, id)
-        cv2.createTrackbar("track2", "test", 1, 255, id)
-        cv2.createTrackbar("track3", "test", 1, 255, id)
-        camera = SimpleCV.Camera(0)
-
-        while True:
-            frame = camera.getImage()
-            median = frame.medianFilter(3)
-            #redOnly(median).threshold(40).show()
-            dir = getDirection(median, whichColor)
-            print dir
-            median.drawText(dir,x = -10, color=SimpleCV.Color.CRIMSON, fontsize=84)
-            median.show()
-            #cv2.imshow("test1", greenOnly(median).getNumpyCv2())
-            #cv2.imshow("test2", redOnly(median).getNumpyCv2())
-
-            #a = frame.drawText("works 1234, 1234")
-
-            key = cv2.waitKey(20)
-            if key == 27: # exit on ESC
-                break
-
-	del camera
 
 def greenOnly(value):
     return value.hueDistance(SimpleCV.Color.GREEN, minsaturation=77, minvalue=93).threshold(80).invert()
