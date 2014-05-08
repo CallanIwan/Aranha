@@ -6,29 +6,28 @@ Find a balloon <insert more info>
 import SimpleCV
 import cv2
 import numpy as np
-
+import debug as db
 width = 640
 height = 480
-cv2.namedWindow("test")
+#cv2.namedWindow("test")
 whichColor = 'red'
-disp = SimpleCV.Display()
+
 
 
 def find(cam, color):
 
-    cv2.createTrackbar("track1", "test", 1, 255, id)
-    cv2.createTrackbar("track2", "test", 1, 255, id)
-    cv2.createTrackbar("track3", "test", 1, 255, id)
+    #cv2.createTrackbar("track1", "test", 1, 255, id)
+    #cv2.createTrackbar("track2", "test", 1, 255, id)
+    #cv2.createTrackbar("track3", "test", 1, 255, id)
 
-    while disp.isNotDone():
+    while True:#disp.isNotDone():
         frame = cam.getImage()
         median = frame.medianFilter(3)
         #redOnly(median).threshold(40).show()
         dir = getDirection(median, whichColor)
         print dir
         median.drawText(dir, x=-10, color=SimpleCV.Color.CRIMSON, fontsize=84)
-        #median.show()
-        median.save(disp)  # show() does not work correct
+        db.showImg(median)  # show() does not work correct
         #cv2.imshow("test1", greenOnly(median).getNumpyCv2())
         #cv2.imshow("test2", redOnly(median).getNumpyCv2())
         #a = frame.drawText("works 1234, 1234")
