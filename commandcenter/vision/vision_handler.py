@@ -4,8 +4,8 @@ Basically a wrapper to real vision functions.
 Handles the commands which have to with Computer Vision (find balloon etc)
 """
 
-from camera import Camera
-import balloon
+from commandcenter.vision.camera import Camera
+from commandcenter.vision import balloon
 
 
 class Handler:

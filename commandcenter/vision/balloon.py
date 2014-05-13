@@ -4,9 +4,10 @@ Find a balloon <insert more info>
 """
 
 import SimpleCV
-import cv2
 import numpy as np
-import debug as db
+
+from commandcenter.vision import debug as db
+
 
 whichColor = 'red'
 
@@ -19,11 +20,13 @@ def find(cam, color):
 
     while True:#disp.isNotDone():
         frame = cam.getImage()
+        '''
         median = frame.medianFilter(3)
         dir = getDirection(median, whichColor)
         print dir
         median.drawText(dir, x=-10, color=SimpleCV.Color.CRIMSON, fontsize=84)
-        db.showImg(median)  # show() does not work correct
+        '''
+        db.showImg(frame)  # show() does not work correct
 
 def greenOnly(value):
     return value.hueDistance(SimpleCV.Color.GREEN, minsaturation=77, minvalue=93).threshold(80).invert()
