@@ -22,6 +22,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.spider.app.R;
 
@@ -140,16 +141,29 @@ public class ConnectActivity extends ActionBarActivity implements View.OnClickLi
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case BluetoothService.MSG_RASPBERRYPI_FOUND:
+                    mConnectedTextView.setText("Raspberry device found");
                     mConnectButton.setEnabled(true);
                     break;
 
                 case BluetoothService.MSG_CONNECTING_FAILED:
+                    Toast.makeText(ConnectActivity.this, "Failed to connect to the spider!", Toast.LENGTH_LONG).show();
+                    mConnectedTextView.setText("Not connected");
                     mConnectButton.setEnabled(false);
                     break;
 
                 case BluetoothService.MSG_CONNECTED_TO_RASPBERRYPI:
                     mConnectedTextView.setText("Connected!");
                     mConnectButton.setEnabled(false);
+                    // Start the main controller screen
+                    startActivity(new Intent(ConnectActivity.this, MainActivity.class));
+                    Toast.makeText(ConnectActivity.this, "Connected to the spider!", Toast.LENGTH_LONG).show();
+                    break;
+
+                case BluetoothService.MSG_CONNECTION_CLOSED:
+                    mConnectedTextView.setText("Not connected");
+                    // Return to the first activity
+                    startActivity(new Intent(ConnectActivity.this, ConnectActivity.class));
+                    Toast.makeText(ConnectActivity.this, "Lost connection to the spider.", Toast.LENGTH_LONG).show();
                     break;
             }
         }

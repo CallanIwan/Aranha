@@ -142,26 +142,15 @@ public class BluetoothService extends Service {
             switch(msg.what) {
 
                 case BluetoothService.MSG_CONNECTED_TO_RASPBERRYPI:
-
                     if(msg.obj != null && msg.obj.getClass() == BluetoothSpiderConnectionThread.class) {
                         bluetoothSpiderConnectionThread = (BluetoothSpiderConnectionThread)msg.obj;
                         Log.d("BluetoothService", "Bluetooth connection thread estblished");
                     }
                     mState = SocketState.CONNECTED;
                     sendMessageToActivity(MSG_CONNECTED_TO_RASPBERRYPI);
-                    Toast.makeText(BluetoothService.this, "Connected to the spider!", Toast.LENGTH_LONG).show();
-                    Intent intentMain =  new Intent(BluetoothService.this, MainActivity.class);
-                    intentMain.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    startActivity(intentMain);
-                    break;
-
-                case BluetoothService.MSG_READ:
-                    String in = new String(Base64.decode((byte[]) msg.obj, Base64.NO_PADDING));
-                    System.out.println("Received: " + in);
                     break;
 
                 case BluetoothService.MSG_CONNECTING_FAILED:
-                    Toast.makeText(BluetoothService.this, "Failed to connect to the spider!", Toast.LENGTH_LONG).show();
                     mRaspberryPiBluetoothDevice = null;
                     bluetoothSpiderConnectionThread = null;
                     mState = SocketState.CLOSED;
@@ -169,14 +158,15 @@ public class BluetoothService extends Service {
                     break;
 
                 case BluetoothService.MSG_CONNECTION_CLOSED:
-
                     mRaspberryPiBluetoothDevice = null;
                     bluetoothSpiderConnectionThread = null;
                     mState = SocketState.CLOSED;
-                    // Return to the first activity
-                    Intent intentConnect =  new Intent(BluetoothService.this, ConnectActivity.class);
-                    intentConnect.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    startActivity(intentConnect);
+                    sendMessageToActivity(MSG_CONNECTION_CLOSED);
+                    break;
+
+                case BluetoothService.MSG_READ:
+                    String in = new String(Base64.decode((byte[]) msg.obj, Base64.NO_PADDING));
+                    System.out.println("Received: " + in);
                     break;
             }
         }
@@ -196,18 +186,17 @@ public class BluetoothService extends Service {
         }
     }
 
-
+    public void discoverBluetoothDevices() {
+        mBluetoothAdapter.cancelDiscovery();
+        mBluetoothAdapter.startDiscovery();
+        Log.d("BluetoothService", "Discovering bluetooth devices!");
+    }
 
 
 //----------------------------------------------------------------
 //-------------Spider functies------------------------------------
 //----------------------------------------------------------------
 
-    public void discoverBluetoothDevices() {
-        mBluetoothAdapter.cancelDiscovery();
-        mBluetoothAdapter.startDiscovery();
-        Log.d("BluetoothService", "Discovering bluetooth devices!");
-    }
 
     /**
      * Connect to the Raspberry Pi with a known MAC address.
