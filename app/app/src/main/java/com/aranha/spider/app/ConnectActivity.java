@@ -15,7 +15,6 @@ import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
-import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -139,19 +138,20 @@ public class ConnectActivity extends ActionBarActivity implements View.OnClickLi
     class BluetoothServiceMessageHandler extends Handler {
         @Override
         public void handleMessage(Message msg) {
-            switch (msg.what) {
-                case BluetoothService.MSG_RASPBERRYPI_FOUND:
+
+            switch (SpiderController.SpiderMessages[msg.what]) {
+                case RASPBERRYPI_FOUND:
                     mConnectedTextView.setText("Raspberry device found");
                     mConnectButton.setEnabled(true);
                     break;
 
-                case BluetoothService.MSG_CONNECTING_FAILED:
+                case CONNECTING_FAILED:
                     Toast.makeText(ConnectActivity.this, "Failed to connect to the spider!", Toast.LENGTH_LONG).show();
                     mConnectedTextView.setText("Not connected");
                     mConnectButton.setEnabled(false);
                     break;
 
-                case BluetoothService.MSG_CONNECTED_TO_RASPBERRYPI:
+                case CONNECTED_TO_RASPBERRYPI:
                     mConnectedTextView.setText("Connected!");
                     mConnectButton.setEnabled(false);
                     // Start the main controller screen
@@ -159,7 +159,8 @@ public class ConnectActivity extends ActionBarActivity implements View.OnClickLi
                     Toast.makeText(ConnectActivity.this, "Connected to the spider!", Toast.LENGTH_LONG).show();
                     break;
 
-                case BluetoothService.MSG_CONNECTION_CLOSED:
+                case CONNECTION_CLOSED:
+                case CONNECTION_LOST:
                     mConnectedTextView.setText("Not connected");
                     // Return to the first activity
                     startActivity(new Intent(ConnectActivity.this, ConnectActivity.class));
@@ -196,7 +197,7 @@ public class ConnectActivity extends ActionBarActivity implements View.OnClickLi
         @Override
         public void afterTextChanged(Editable editable) {
             if(mBluetoothIsConnected)
-                mBluetoothService.setRaspberryPiName(editable.toString());
+                mBluetoothService.setRaspberryPiBluetoothName(editable.toString());
         }
     };
 

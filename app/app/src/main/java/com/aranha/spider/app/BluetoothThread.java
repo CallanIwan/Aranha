@@ -53,7 +53,7 @@ public class BluetoothThread extends Thread {
 
             Log.d("BluetoothThread", "!!! Unable to connect to socket." + closeException.getMessage());
             try {
-                mMessenger.send(Message.obtain(null, BluetoothService.MSG_CONNECTING_FAILED));
+                mMessenger.send(Message.obtain(null, SpiderController.SpiderMessage.CONNECTING_FAILED.ordinal()));
             } catch (RemoteException e) {
                 e.printStackTrace();
             }

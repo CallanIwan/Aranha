@@ -52,8 +52,8 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
      */
     ViewPager mViewPager;
 
-    static BluetoothService mBluetoothService;
-    boolean mBluetoothIsConnected = false;
+    static SpiderController mSpiderControllerService;
+    boolean mIsConnectedToService = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -94,12 +94,13 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
                             .setTabListener(this));
         }
 
-        startBluetoothService();
+        connectToSpiderControllerService();
     }
 
-    public void startBluetoothService() {
+    public void connectToSpiderControllerService() {
+        //TODO: Wifi or Bluetooth
         Intent intent = new Intent(this, BluetoothService.class);
-        intent.putExtra("messageReceiver", mBluetoothServiceMessenger);
+        intent.putExtra("messageReceiver", mSpiderMessenger);
         bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
     }
 
@@ -111,15 +112,14 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
         @Override
         public void onServiceConnected(ComponentName className, IBinder service) {
             // Get the bluetoothService class via BluetoothBinder.
-            mBluetoothService = ((BluetoothService.BluetoothBinder) service).getService();
-            mBluetoothService.discoverBluetoothDevices();
-            mBluetoothIsConnected = true;
+            mSpiderControllerService = ((BluetoothService.BluetoothBinder) service).getService();
+            mIsConnectedToService = true;
             Log.d("MainActivity", "Bluetooth service is connected");
         }
 
         @Override
         public void onServiceDisconnected(ComponentName arg0) {
-            mBluetoothIsConnected = false;
+            mIsConnectedToService = false;
             Log.d("MainActivity", "Bluetooth service disconnected");
         }
     };
@@ -127,18 +127,18 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
     /**
      * Receives all the messages from the Bluetooth service
      */
-    final Messenger mBluetoothServiceMessenger = new Messenger(new BluetoothServiceMessageHandler());
+    final Messenger mSpiderMessenger = new Messenger(new BluetoothServiceMessageHandler());
     class BluetoothServiceMessageHandler extends Handler {
         @Override
         public void handleMessage(Message msg) {
-            switch (msg.what) {
-                case BluetoothService.MSG_RASPBERRYPI_FOUND:
+            switch (SpiderController.SpiderMessages[msg.what]) {
+                case RASPBERRYPI_FOUND:
                     break;
 
-                case BluetoothService.MSG_CONNECTING_FAILED:
+                case CONNECTING_FAILED:
                     break;
 
-                case BluetoothService.MSG_CONNECTED_TO_RASPBERRYPI:
+                case CONNECTED_TO_RASPBERRYPI:
                     break;
             }
         }
@@ -265,7 +265,7 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
             @Override
             public void onClick(View view) {
                 if(view.getId() == R.id.leftArrowButton) {
-                    mBluetoothService.spider_MoveLeft();
+                    mSpiderControllerService.send_moveLeft();
                 }
 
             }
@@ -323,6 +323,9 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
         int id = item.getItemId();
         if (id == R.id.action_settings) {
             return true;
+        } else if( id == R.id.action_disconnect) {
+            mSpiderControllerService.disconnect();
+            startActivity(new Intent(MainActivity.this, ConnectActivity.class));
         }
         return super.onOptionsItemSelected(item);
     }

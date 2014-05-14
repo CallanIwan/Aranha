@@ -5,6 +5,17 @@ package com.aranha.spider.app;
  */
 public interface SpiderController {
 
+    public static final SpiderMessage[] SpiderMessages = SpiderMessage.values();
+    public enum SpiderMessage {
+        RASPBERRYPI_FOUND,
+        CONNECTING_TO_RASPBERRYPI,
+        CONNECTING_FAILED,
+        CONNECTED_TO_RASPBERRYPI,
+        CONNECTION_LOST,
+        CONNECTION_CLOSED,
+        READ_MSG_FROM_RASPBERRYPI
+    }
+
     public enum SocketState {
         INIT,
         CONNECTED,
@@ -15,6 +26,7 @@ public interface SpiderController {
     public void connect();
     public void disconnect();
 
+    public void send_move(int direction);
     public void send_moveLeft();
     public void send_moveRight();
     public void send_moveForward();

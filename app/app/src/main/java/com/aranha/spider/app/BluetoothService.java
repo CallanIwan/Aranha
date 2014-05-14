@@ -10,12 +10,10 @@ import android.content.IntentFilter;
 import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
-import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
 import android.util.Base64;
 import android.util.Log;
-import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,14 +21,7 @@ import java.util.List;
 /**
  * Created by Rutger on 10-05-2014.
  */
-public class BluetoothService extends Service {
-
-    public static final int MSG_RASPBERRYPI_FOUND = 1;
-    public static final int MSG_CONNECTED_TO_RASPBERRYPI = 2;
-    public static final int MSG_CONNECTING_FAILED = 3;
-    public static final int MSG_CONNECTION_CLOSED = 4;
-
-    public static final int MSG_READ = 5;
+public class BluetoothService extends Service implements SpiderController {
 
     /**
      * The activity which connects to this service can receive
@@ -40,7 +31,7 @@ public class BluetoothService extends Service {
 
 
     /**
-     * The binder which clients use to communicate with this bluetooth service.
+     * The binder which Activities (clients) use to communicate with this bluetooth service.
      */
     private final IBinder mBinder = new BluetoothBinder();
     public class BluetoothBinder extends Binder {
@@ -65,29 +56,22 @@ public class BluetoothService extends Service {
         return mBinder;
     }
 
-//----------------------------------------------------------------
-//-------------Set up bluetooth-----------------------------------
-//----------------------------------------------------------------
 
-    private enum SocketState {
-        INIT,
-        CONNECTED,
-        LISTENING,
-        CLOSED,
-    }
-    private SocketState mState = SocketState.CLOSED;
+    // --------------------------------------------
+    //    Set up bluetooth
+    // --------------------------------------------
+
     private BluetoothAdapter mBluetoothAdapter;
     private BluetoothDevice mRaspberryPiBluetoothDevice;
     private BluetoothSpiderConnectionThread bluetoothSpiderConnectionThread;
-
     private String mRaspberryPiName = "raspberrypi-0";
 
     @Override
     public void onCreate() {
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        // Register bluetooth device-discovery.
         IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
         registerReceiver(mBluetoothReceiver, filter); // Don't forget to unregister in onDestroy()
-        System.out.println("Bluetooth receiver registered.");
         Log.d("BluetoothService","Bluetooth receiver registered");
     }
 
@@ -97,22 +81,22 @@ public class BluetoothService extends Service {
         unregisterReceiver(mBluetoothReceiver);
     }
 
-    public void setRaspberryPiName(String newName) {
+    public void setRaspberryPiBluetoothName(String newName) {
         mRaspberryPiName = newName;
     }
 
     /**
      * Every time a bluetooth mBluetoothDevice is found the onReceive() function gets executed.
      */
+    final List<String> discoveredDevices = new ArrayList<String>();
     final BroadcastReceiver mBluetoothReceiver = new BroadcastReceiver() {
-        final List<String> ss = new ArrayList<String>();
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
-            // When discovery finds a device
+            // When discovery finds a bluetooth device
             if (BluetoothDevice.ACTION_FOUND.equals(action)) {
                 BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE); // Get the BluetoothDevice object from the Intent
-                ss.add(device.getName() + "\n" + device.getAddress()); // Add the name and address to an array adapter to show in a ListView
-                Log.d("BluetoothService", device.getName() + " - " + device.getAddress() + " Looking for " + mRaspberryPiName);
+                discoveredDevices.add(device.getName() + "\n" + device.getAddress()); // Add the name and address to an array adapter to show in a ListView
+                Log.d("BluetoothService", "New Device: " + device.getName() + " - " + device.getAddress() + " Looking for " + mRaspberryPiName);
 
                 if(device.getName()!= null && device.getName().equals(mRaspberryPiName)) {
                     onRaspberryPiFound(device);
@@ -121,15 +105,20 @@ public class BluetoothService extends Service {
         }
     };
 
+    public void discoverBluetoothDevices() {
+        mBluetoothAdapter.cancelDiscovery();
+        mBluetoothAdapter.startDiscovery();
+        Log.d("BluetoothService", "Discovering bluetooth devices!");
+    }
+
     /**
      * Gets called whenever the Raspberry Pi is found via bluetooth.
      * @param device Device with the Raspberry Pi MAC address
      */
     public void onRaspberryPiFound(BluetoothDevice device) {
         mRaspberryPiBluetoothDevice = device;
-        mState = SocketState.INIT;
         mBluetoothAdapter.cancelDiscovery();
-        sendMessageToActivity(MSG_RASPBERRYPI_FOUND);
+        sendMessageToActivity(SpiderMessage.RASPBERRYPI_FOUND);
     }
 
     /**
@@ -138,33 +127,36 @@ public class BluetoothService extends Service {
     final Messenger mBluetoothConnectorMessenger = new Messenger(new BluetoothConnectionMessenger());
     class BluetoothConnectionMessenger extends Handler {
         @Override
-        public void handleMessage(Message msg) {
-            switch(msg.what) {
+        public void handleMessage(android.os.Message msg) {
 
-                case BluetoothService.MSG_CONNECTED_TO_RASPBERRYPI:
+            switch(SpiderController.SpiderMessages[msg.what]) {
+                case CONNECTED_TO_RASPBERRYPI:
                     if(msg.obj != null && msg.obj.getClass() == BluetoothSpiderConnectionThread.class) {
                         bluetoothSpiderConnectionThread = (BluetoothSpiderConnectionThread)msg.obj;
                         Log.d("BluetoothService", "Bluetooth connection thread estblished");
                     }
-                    mState = SocketState.CONNECTED;
-                    sendMessageToActivity(MSG_CONNECTED_TO_RASPBERRYPI);
+                    sendMessageToActivity(SpiderMessage.CONNECTED_TO_RASPBERRYPI);
                     break;
 
-                case BluetoothService.MSG_CONNECTING_FAILED:
+                case CONNECTING_FAILED:
                     mRaspberryPiBluetoothDevice = null;
                     bluetoothSpiderConnectionThread = null;
-                    mState = SocketState.CLOSED;
-                    sendMessageToActivity(MSG_CONNECTING_FAILED);
+                    sendMessageToActivity(SpiderMessage.CONNECTING_FAILED);
                     break;
 
-                case BluetoothService.MSG_CONNECTION_CLOSED:
+                case CONNECTION_CLOSED:
                     mRaspberryPiBluetoothDevice = null;
                     bluetoothSpiderConnectionThread = null;
-                    mState = SocketState.CLOSED;
-                    sendMessageToActivity(MSG_CONNECTION_CLOSED);
+                    sendMessageToActivity(SpiderMessage.CONNECTION_CLOSED);
                     break;
 
-                case BluetoothService.MSG_READ:
+                case CONNECTION_LOST:
+                    mRaspberryPiBluetoothDevice = null;
+                    bluetoothSpiderConnectionThread = null;
+                    sendMessageToActivity(SpiderMessage.CONNECTION_LOST);
+                    break;
+
+                case READ_MSG_FROM_RASPBERRYPI:
                     String in = new String(Base64.decode((byte[]) msg.obj, Base64.NO_PADDING));
                     System.out.println("Received: " + in);
                     break;
@@ -172,12 +164,12 @@ public class BluetoothService extends Service {
         }
     }
 
-    private void sendMessageToActivity(int message) {
+    private void sendMessageToActivity(SpiderMessage message) {
 
-        if(mMessageReceiver != null) {
+        if (mMessageReceiver != null) {
             Log.d("BluetoothService", "Sending message to activity: " + message);
             try {
-                mMessageReceiver.send(Message.obtain(null, message, 0,0 ));
+                mMessageReceiver.send(android.os.Message.obtain(null, message.ordinal(), 0, 0));
             } catch (RemoteException e) {
                 e.printStackTrace();
             }
@@ -186,17 +178,10 @@ public class BluetoothService extends Service {
         }
     }
 
-    public void discoverBluetoothDevices() {
-        mBluetoothAdapter.cancelDiscovery();
-        mBluetoothAdapter.startDiscovery();
-        Log.d("BluetoothService", "Discovering bluetooth devices!");
-    }
 
-
-//----------------------------------------------------------------
-//-------------Spider functies------------------------------------
-//----------------------------------------------------------------
-
+    // --------------------------------------------
+    //    Implemented SpiderController Methods
+    // --------------------------------------------
 
     /**
      * Connect to the Raspberry Pi with a known MAC address.
@@ -207,26 +192,72 @@ public class BluetoothService extends Service {
         onRaspberryPiFound(device);
     }
 
+    @Override
     public void connect() {
         BluetoothThread btThread = new BluetoothThread(mRaspberryPiBluetoothDevice, mBluetoothConnectorMessenger);
         btThread.start();
     }
 
+    @Override
+    public void disconnect() {
+        if(bluetoothSpiderConnectionThread != null) {
+            bluetoothSpiderConnectionThread.cancel();
+        }
+    }
 
-    /**
-     * VOORBEELD FUNCTIE!!!!!!!!!!!
-     */
-    public void spider_MoveLeft() {
+    @Override
+    public void send_move(int direction) {
+
+    }
+
+    @Override
+    public void send_moveLeft() {
         if(bluetoothSpiderConnectionThread != null) {
             Log.d("BluetoothService -> bluetooth -> spider",  " moveLeft");
             bluetoothSpiderConnectionThread.writeBase64("Move Left");
         }
     }
-    public void spider_Dance() {
+
+    @Override
+    public void send_moveRight() {
         if(bluetoothSpiderConnectionThread != null) {
             Log.d("BluetoothService -> bluetooth -> spider",  " dance");
             bluetoothSpiderConnectionThread.writeBase64("Ga dancen, bitch");
         }
     }
 
+    @Override
+    public void send_moveForward() {
+
+    }
+
+    @Override
+    public void send_moveBackwards() {
+
+    }
+
+    @Override
+    public void send_moveUp() {
+
+    }
+
+    @Override
+    public void send_moveDown() {
+
+    }
+
+    @Override
+    public void send_dance() {
+
+    }
+
+    @Override
+    public void send_resetToDefaultPosition() {
+
+    }
+
+    @Override
+    public void send_executeScript(int scriptIndex) {
+
+    }
 }

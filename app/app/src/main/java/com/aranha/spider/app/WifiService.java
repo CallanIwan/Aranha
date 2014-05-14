@@ -1,16 +1,36 @@
 package com.aranha.spider.app;
 
-import android.os.Bundle;
+import android.app.Service;
+import android.content.Intent;
+import android.os.Binder;
+import android.os.IBinder;
 
 /**
  * Created by Rutger on 13-05-14.
  */
-public class WifiService implements SpiderController {
+public class WifiService extends Service implements SpiderController {
 
-    //@Override
-    protected void onCreate(Bundle savedInstanceState) {
 
+    /**
+     * The binder which Activities (clients) use to communicate with this bluetooth service.
+     */
+    private final IBinder mBinder = new WifiBinder();
+    public class WifiBinder extends Binder {
+        WifiService getService() {
+            return WifiService.this;
+        }
     }
+
+    /**
+     * When an activity binds to this service this gets called.
+     * @return The this instance.
+     */
+    @Override
+    public IBinder onBind(Intent intent) {
+        return mBinder;
+    }
+
+
 
     // --------------------------------------------
     //    Implemented SpiderController Methods
@@ -23,6 +43,11 @@ public class WifiService implements SpiderController {
 
     @Override
     public void disconnect() {
+
+    }
+
+    @Override
+    public void send_move(int direction) {
 
     }
 
