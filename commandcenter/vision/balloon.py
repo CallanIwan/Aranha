@@ -5,11 +5,9 @@ Find a balloon <insert more info>
 
 import SimpleCV
 import numpy as np
+import time
 
-from commandcenter.vision import debug as db
-
-
-whichColor = 'red'
+from vision import debug as db
 
 
 def find(cam, color):
@@ -20,22 +18,26 @@ def find(cam, color):
 
     while True:#disp.isNotDone():
         frame = cam.getImage()
-        '''
-        median = frame.medianFilter(3)
-        dir = getDirection(median, whichColor)
-        print dir
+
+        median = frame.medianFilter(11)
+        dir = getDirection(median, color)
+
+
         median.drawText(dir, x=-10, color=SimpleCV.Color.CRIMSON, fontsize=84)
-        '''
-        db.showImg(frame)  # show() does not work correct
+
+        db.showImg(median)  # show() does not work correct
 
 def greenOnly(value):
-    return value.hueDistance(SimpleCV.Color.GREEN, minsaturation=77, minvalue=93).threshold(80).invert()
+    #return value.hueDistance(SimpleCV.Color.GREEN, minsaturation=77, minvalue=93).threshold(80).invert()
+    return (value + (value.hueDistance(SimpleCV.Color.GREEN, minsaturation=70)*1.5).threshold(70)).invert()
 
 def redOnly(value):
-    return value.hueDistance(SimpleCV.Color.RED, 137, 100).threshold(20).invert()
+    #return value.hueDistance(SimpleCV.Color.RED, minsaturation=137, minvalue=100).threshold(25).invert()
+    return (value + (value.hueDistance(SimpleCV.Color.RED, minsaturation=150)   *1.5).threshold(35)).invert()
 
 def blueOnly(img):
-    return img.hueDistance(SimpleCV.Color.BLUE, minsaturation=70, minvalue=150).threshold(90).invert()
+    #return img.hueDistance(SimpleCV.Color.BLUE, minsaturation=70, minvalue=150).threshold(90).invert()
+    return (img + (img.hueDistance(SimpleCV.Color.BLUE, minsaturation=50)  *1.7).threshold(70)).invert()
 
 def getDirection(img, color):
     width = img.width
@@ -51,14 +53,15 @@ def getDirection(img, color):
     sumLeft = np.sum(filtered.regionSelect(0, 0, width/2, height).getGrayNumpy())
     sumRight = np.sum(filtered.regionSelect(width/2, 0, width, height).getGrayNumpy())
     sumMid = np.sum(filtered.regionSelect(width/5*2, 0, width/5*3, height).getGrayNumpy())
-
     sumBoth = sumLeft + sumRight
+    x = width*height
+
     #print("sumleft: " + `sumLeft` + ". sumMid: " + `sumMid` + ". sumRight: " + `sumRight` + ". sumBoth: " + `sumBoth`)
-    if sumBoth > 20000000 or sumMid > 300000:
-        return 'forward: ' + `sumBoth`
-    elif sumLeft > 300000:
-        return 'left: ' + `sumLeft`
-    elif sumRight > 300000:
-        return 'right: ' + `sumRight`
+    if sumBoth > 40*x or sumMid > 1*x:
+        return 'forward: ' + `sumBoth/x`
+    elif sumLeft > 1*x:
+        return 'left: ' + `sumLeft/x`
+    elif sumRight > 1*x:
+        return 'right: ' + `sumRight/x`
     else:
         return 'nothing'

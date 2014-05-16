@@ -9,7 +9,7 @@ class Streamer(Thread):
         super(Streamer, self).__init__()
         self.daemon = True
         self.cam = SimpleCV.Camera(0)
-        self.js = SimpleCV.JpegStreamer('0.0.0.0:8080')
+        self.js = SimpleCV.JpegStreamer(9090)
 
     def run(self):
         while True:
