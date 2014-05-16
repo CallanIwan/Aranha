@@ -9,7 +9,7 @@ Android App: receive/send
 import time
 import base64
 from threading import Thread
-from bluetooth import *
+#from bluetooth import *
 import protocol
 
 

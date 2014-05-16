@@ -12,7 +12,7 @@ from vision import streamer
 stream = streamer.Streamer().start()
 
 # start bluetoothserver for app
-btserve = bt.BluetoothServer().start()
+#btserve = bt.BluetoothServer().start()
 
 # start PS3Handler thread
 #ps3handler = pshandler.PS3Handler().start()
