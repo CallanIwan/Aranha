@@ -36,6 +36,7 @@ import com.example.spider.app.R;
 
 
 public class MainActivity extends ActionBarActivity implements ActionBar.TabListener {
+    private static final String TAG = "MainActivity";
 
     /**
      * The {@link android.support.v4.view.PagerAdapter} that will provide
@@ -63,6 +64,7 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
         // Set up the action bar.
         final ActionBar actionBar = getSupportActionBar();
         actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
+        actionBar.setDisplayHomeAsUpEnabled(true);
 
         // Create the adapter that will return a fragment for each of the three
         // primary sections of the activity.
@@ -97,11 +99,24 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
         connectToSpiderControllerService();
     }
 
+    @Override
+    protected void onStop() {
+        super.onStop();
+
+        if (mIsConnectedToService) { // Unbind from the service
+            unbindService(mConnection);
+            mIsConnectedToService = false;
+        }
+    }
+
+
     public void connectToSpiderControllerService() {
         //TODO: Wifi or Bluetooth
-        Intent intent = new Intent(this, BluetoothService.class);
-        intent.putExtra("messageReceiver", mSpiderMessenger);
-        bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+        if(!mIsConnectedToService) {
+            Intent intent = new Intent(this, BluetoothService.class);
+            intent.putExtra("messageReceiver", mSpiderMessenger);
+            bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+        }
     }
 
     /**
@@ -114,13 +129,13 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
             // Get the bluetoothService class via BluetoothBinder.
             mSpiderControllerService = ((BluetoothService.BluetoothBinder) service).getService();
             mIsConnectedToService = true;
-            Log.d("MainActivity", "Bluetooth service is connected");
+            Log.d(TAG, "Bluetooth service is connected");
         }
 
         @Override
         public void onServiceDisconnected(ComponentName arg0) {
             mIsConnectedToService = false;
-            Log.d("MainActivity", "Bluetooth service disconnected");
+            Log.d(TAG, "Bluetooth service disconnected");
         }
     };
 

@@ -17,6 +17,8 @@ import java.util.UUID;
  * If successful it will start another thread which handles all the messages.
  */
 public class BluetoothThread extends Thread {
+    private static final String TAG = "BluetoothThread";
+
     private UUID MY_UUID = UUID.randomUUID();
     private final BluetoothSocket mmSocket;
     private final BluetoothDevice mmDevice;
@@ -51,7 +53,7 @@ public class BluetoothThread extends Thread {
 
         } catch (IOException closeException) {
 
-            Log.d("BluetoothThread", "!!! Unable to connect to socket." + closeException.getMessage());
+            Log.d(TAG, "!!! Unable to connect to socket." + closeException.getMessage());
             try {
                 mMessenger.send(Message.obtain(null, SpiderController.SpiderMessage.CONNECTING_FAILED.ordinal()));
             } catch (RemoteException e) {

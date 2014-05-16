@@ -13,5 +13,6 @@
     <string name="title_activity_wifi_connect">WifiConnectActivity</string>
     <string name="hello_world">Hello world!</string>
     <string name="action_disconnect">Disconnect</string>
+    <string name="title_activity_test">TestActivity</string>
 
 </resources>

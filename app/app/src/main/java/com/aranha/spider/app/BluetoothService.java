@@ -17,17 +17,19 @@ import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Created by Rutger on 10-05-2014.
  */
 public class BluetoothService extends Service implements SpiderController {
+    private static final String TAG = "BluetoothService";
 
     /**
      * The activity which connects to this service can receive
      * messages by providing a Messenger as extra data when binding.
      */
-    private Messenger mMessageReceiver;
+    private Messenger mActivityMessenger;
 
 
     /**
@@ -46,13 +48,11 @@ public class BluetoothService extends Service implements SpiderController {
      */
     @Override
     public IBinder onBind(Intent intent) {
-        this.mMessageReceiver = intent.getParcelableExtra("messageReceiver");
-        if(mMessageReceiver == null) {
-            Log.d("BluetoothService", "Activity bound to the service but did not send a MessageReceiver");
+        this.mActivityMessenger = intent.getParcelableExtra("messageReceiver");
+        if(mActivityMessenger == null) {
+            Log.d(TAG, "Activity bound to the service but did not send a MessageReceiver");
         }
-
-        Log.d("BluetoothService", "New activity bound to this service");
-
+        Log.d(TAG, "New activity bound to this service");
         return mBinder;
     }
 
@@ -68,11 +68,12 @@ public class BluetoothService extends Service implements SpiderController {
 
     @Override
     public void onCreate() {
+        super.onCreate();
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         // Register bluetooth device-discovery.
         IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
         registerReceiver(mBluetoothReceiver, filter); // Don't forget to unregister in onDestroy()
-        Log.d("BluetoothService","Bluetooth receiver registered");
+        Log.d(TAG,"Bluetooth receiver registered");
     }
 
     @Override
@@ -96,19 +97,20 @@ public class BluetoothService extends Service implements SpiderController {
             if (BluetoothDevice.ACTION_FOUND.equals(action)) {
                 BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE); // Get the BluetoothDevice object from the Intent
                 discoveredDevices.add(device.getName() + "\n" + device.getAddress()); // Add the name and address to an array adapter to show in a ListView
-                Log.d("BluetoothService", "New Device: " + device.getName() + " - " + device.getAddress() + " Looking for " + mRaspberryPiName);
+                Log.d(TAG, "New Device: " + device.getName() + " - " + device.getAddress() + " Looking for " + mRaspberryPiName);
 
                 if(device.getName()!= null && device.getName().equals(mRaspberryPiName)) {
                     onRaspberryPiFound(device);
                 }
             }
+            System.out.println(" ?? " + intent.getAction());
         }
     };
 
     public void discoverBluetoothDevices() {
         mBluetoothAdapter.cancelDiscovery();
         mBluetoothAdapter.startDiscovery();
-        Log.d("BluetoothService", "Discovering bluetooth devices!");
+        Log.d(TAG, "Discovering bluetooth devices!");
     }
 
     /**
@@ -133,7 +135,7 @@ public class BluetoothService extends Service implements SpiderController {
                 case CONNECTED_TO_RASPBERRYPI:
                     if(msg.obj != null && msg.obj.getClass() == BluetoothSpiderConnectionThread.class) {
                         bluetoothSpiderConnectionThread = (BluetoothSpiderConnectionThread)msg.obj;
-                        Log.d("BluetoothService", "Bluetooth connection thread estblished");
+                        Log.d(TAG, "Bluetooth connection thread established");
                     }
                     sendMessageToActivity(SpiderMessage.CONNECTED_TO_RASPBERRYPI);
                     break;
@@ -158,25 +160,13 @@ public class BluetoothService extends Service implements SpiderController {
 
                 case READ_MSG_FROM_RASPBERRYPI:
                     String in = new String(Base64.decode((byte[]) msg.obj, Base64.NO_PADDING));
-                    System.out.println("Received: " + in);
+                   Log.d(TAG, "Received: " + in);
                     break;
             }
         }
     }
 
-    private void sendMessageToActivity(SpiderMessage message) {
 
-        if (mMessageReceiver != null) {
-            Log.d("BluetoothService", "Sending message to activity: " + message);
-            try {
-                mMessageReceiver.send(android.os.Message.obtain(null, message.ordinal(), 0, 0));
-            } catch (RemoteException e) {
-                e.printStackTrace();
-            }
-        } else {
-            Log.d("BluetoothService", "Cannot send MSG to activity. Activity did not provide a Messenger!");
-        }
-    }
 
 
     // --------------------------------------------
@@ -205,6 +195,25 @@ public class BluetoothService extends Service implements SpiderController {
         }
     }
 
+    public void sendMessageToActivity(SpiderMessage message) {
+
+        if (mActivityMessenger != null) {
+            Log.d(TAG, "Sending message to activity: " + message);
+            try {
+                mActivityMessenger.send(android.os.Message.obtain(null, message.ordinal(), 0, 0));
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        } else {
+            Log.d(TAG, "Cannot send MSG to activity. Activity did not provide a Messenger!");
+        }
+    }
+
+    @Override
+    public void send(SpiderInstruction instruction) {
+
+    }
+
     @Override
     public void send_move(int direction) {
 
@@ -213,7 +222,6 @@ public class BluetoothService extends Service implements SpiderController {
     @Override
     public void send_moveLeft() {
         if(bluetoothSpiderConnectionThread != null) {
-            Log.d("BluetoothService -> bluetooth -> spider",  " moveLeft");
             bluetoothSpiderConnectionThread.writeBase64("Move Left");
         }
     }
@@ -221,8 +229,8 @@ public class BluetoothService extends Service implements SpiderController {
     @Override
     public void send_moveRight() {
         if(bluetoothSpiderConnectionThread != null) {
-            Log.d("BluetoothService -> bluetooth -> spider",  " dance");
             bluetoothSpiderConnectionThread.writeBase64("Ga dancen, bitch");
+            bluetoothSpiderConnectionThread.sendSpiderInstruction(SpiderInstruction.move);
         }
     }
 

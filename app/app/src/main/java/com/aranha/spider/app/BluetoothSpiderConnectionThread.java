@@ -16,6 +16,7 @@ import java.io.OutputStream;
  * Handles all the communication between the Raspberry Pi and the App.
  */
 public class BluetoothSpiderConnectionThread extends Thread {
+    private static final String TAG = "BluetoothSpiderConnectionThread";
 
     private final BluetoothSocket mmSocket;
     private final InputStream mmInStream;
@@ -84,11 +85,11 @@ public class BluetoothSpiderConnectionThread extends Thread {
 
                 try {
                     if(isDisconnectedByUser) {
-                        Log.d("BluetoothSpiderConnectionThread", "Disconnected from the Raspberry Pi.");
+                        Log.d(TAG, "Disconnected from the Raspberry Pi.");
                         mMessenger.send(Message.obtain(null, SpiderController.SpiderMessage.CONNECTION_CLOSED.ordinal(), 0, 0));
                     }
                     else { // Connection lost by some other circumstance.
-                        Log.d("BluetoothSpiderConnectionThread", "Connection lost to Raspberry Pi.");
+                        Log.d(TAG, "Connection lost to Raspberry Pi.");
                         mMessenger.send(Message.obtain(null, SpiderController.SpiderMessage.CONNECTION_LOST.ordinal(), 0, 0));
                     }
                 } catch (RemoteException e1) {
@@ -101,8 +102,16 @@ public class BluetoothSpiderConnectionThread extends Thread {
     }
 
     /**
+     * Send an instruction to the spider
+     * @param instruction The instruction to send.
+     */
+    public void sendSpiderInstruction(SpiderInstruction instruction) {
+        write(Base64.encode(instruction.toString().getBytes(), Base64.NO_PADDING));
+    }
+
+    /**
      * Called from the main activity to send a string encoded with Base64.
-     * @param input
+     * @param input string
      */
     public void writeBase64(String input) {
         write(Base64.encode(input.getBytes(), Base64.NO_PADDING));

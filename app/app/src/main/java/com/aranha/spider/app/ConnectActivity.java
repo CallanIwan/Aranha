@@ -29,6 +29,8 @@ import com.example.spider.app.R;
  * The activity which is used to connect to the Raspberry Pi.
  */
 public class ConnectActivity extends ActionBarActivity implements View.OnClickListener {
+    private static final String TAG = "ConnectActivity";
+
     private final int REQUEST_ENABLE_BLUETOOTH = 1;
 
     private Button mConnectButton, mRefreshButton, mManualConnectButton;
@@ -121,13 +123,13 @@ public class ConnectActivity extends ActionBarActivity implements View.OnClickLi
             mBluetoothService = ((BluetoothService.BluetoothBinder) service).getService();
             mBluetoothService.discoverBluetoothDevices();
             mBluetoothIsConnected = true;
-            Log.d("ConnectActivity", "Bluetooth service is connected");
+            Log.d(TAG, "Bluetooth service is connected");
         }
 
         @Override
         public void onServiceDisconnected(ComponentName arg0) {
             mBluetoothIsConnected = false;
-            Log.d("ConnectActivity", "Bluetooth service disconnected");
+            Log.d(TAG, "Bluetooth service disconnected");
         }
     };
 
@@ -215,6 +217,7 @@ public class ConnectActivity extends ActionBarActivity implements View.OnClickLi
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
         if (id == R.id.action_settings) {
+            startActivity(new Intent(ConnectActivity.this, WifiDirectConnectActivity.class));
             return true;
         }
         return super.onOptionsItemSelected(item);

@@ -26,6 +26,9 @@ public interface SpiderController {
     public void connect();
     public void disconnect();
 
+    public void sendMessageToActivity(SpiderMessage message);
+    public void send(SpiderInstruction instruction);
+
     public void send_move(int direction);
     public void send_moveLeft();
     public void send_moveRight();
