@@ -1,11 +1,9 @@
 package com.aranha.spider.app;
 
 import android.bluetooth.BluetoothSocket;
-import android.os.Bundle;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
-import android.provider.ContactsContract;
 import android.util.Base64;
 import android.util.Log;
 
@@ -13,16 +11,19 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+
 /**
  * Handles all the communication between the Raspberry Pi and the App.
  */
 public class BluetoothSpiderConnectionThread extends Thread {
+    private static final String TAG = "BluetoothSpiderConnectionThread";
 
     private final BluetoothSocket mmSocket;
     private final InputStream mmInStream;
     private final OutputStream mmOutStream;
 
     private final Messenger mMessenger;
+    private boolean isDisconnectedByUser = false;
 
     /**
      * Gets an already connected socket and sets up the communication.
@@ -46,7 +47,7 @@ public class BluetoothSpiderConnectionThread extends Thread {
 
         try {
             Message msg = new Message();
-            msg.what = BluetoothService.MSG_CONNECTED_TO_RASPBERRYPI;
+            msg.what = SpiderController.SpiderMessage.CONNECTED_TO_RASPBERRYPI.ordinal();
             msg.obj = this;
             mMessenger.send(msg);
         } catch (RemoteException e) {
@@ -75,7 +76,7 @@ public class BluetoothSpiderConnectionThread extends Thread {
 
                 // Send the obtained bytes to the bluetooth service
                 try {
-                    mMessenger.send(Message.obtain(null, BluetoothService.MSG_READ, bytes, -1, buffer));
+                    mMessenger.send(Message.obtain(null, SpiderController.SpiderMessage.READ_MSG_FROM_RASPBERRYPI.ordinal(), bytes, -1, buffer));
                 } catch (RemoteException e) {
                     e.printStackTrace();
                 }
@@ -83,8 +84,14 @@ public class BluetoothSpiderConnectionThread extends Thread {
             } catch (IOException e) {
 
                 try {
-                    Log.d("BluetoothSpiderConnectionThread", "Connection lost to Raspberry Pi.");
-                    mMessenger.send(Message.obtain(null, BluetoothService.MSG_CONNECTION_CLOSED, 0, 0));
+                    if(isDisconnectedByUser) {
+                        Log.d(TAG, "Disconnected from the Raspberry Pi.");
+                        mMessenger.send(Message.obtain(null, SpiderController.SpiderMessage.CONNECTION_CLOSED.ordinal(), 0, 0));
+                    }
+                    else { // Connection lost by some other circumstance.
+                        Log.d(TAG, "Connection lost to Raspberry Pi.");
+                        mMessenger.send(Message.obtain(null, SpiderController.SpiderMessage.CONNECTION_LOST.ordinal(), 0, 0));
+                    }
                 } catch (RemoteException e1) {
                     e1.printStackTrace();
                 }
@@ -95,8 +102,16 @@ public class BluetoothSpiderConnectionThread extends Thread {
     }
 
     /**
+     * Send an instruction to the spider
+     * @param instruction The instruction to send.
+     */
+    public void sendSpiderInstruction(SpiderInstruction instruction) {
+        write(Base64.encode(instruction.toString().getBytes(), Base64.NO_PADDING));
+    }
+
+    /**
      * Called from the main activity to send a string encoded with Base64.
-     * @param input
+     * @param input string
      */
     public void writeBase64(String input) {
         write(Base64.encode(input.getBytes(), Base64.NO_PADDING));
@@ -117,6 +132,7 @@ public class BluetoothSpiderConnectionThread extends Thread {
      */
     public void cancel() {
         try {
+            isDisconnectedByUser = true;
             mmSocket.close();
         } catch (IOException e) { }
     }

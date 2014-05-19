@@ -10,5 +10,9 @@
     <string name="spin_mac">MAC:</string>
     <string name="title_activity_connect">ConnectActivity</string>
     <string name="search_for">Searching For</string>
+    <string name="title_activity_wifi_connect">WifiConnectActivity</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="action_disconnect">Disconnect</string>
+    <string name="title_activity_test">TestActivity</string>
 
 </resources>
