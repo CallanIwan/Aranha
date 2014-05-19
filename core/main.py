@@ -4,19 +4,20 @@ Main is basically a server who receives commands via Bluetooth or WiFi
 and handles them, FOR NOW IT'S ONLY FOR PROTOTYPING
 """
 
-import sys
-from network import bluetooth_server as bt
-from vision import streamer
+import time
+from network import bluetooth_server as bt, wifi_server as ws
+#from control import ps3_handler as ps3
 
-# start stream for commandcenter
-stream = streamer.Streamer().start()
 
 # start bluetoothserver for app
-btserve = bt.BluetoothServer().start()
+#btserve = bt.BluetoothServer().start()
+
+# start wifi server for app
+#wifiserve = ws.WifiServer().start()
 
 # start PS3Handler thread
-#ps3handler = pshandler.PS3Handler().start()
+#ps3handler = ps3.PS3Handler().start()
 
-# exit on keypress
-x = raw_input()
-sys.exit(0)
+# keep threads alive, die on CTRL-C
+while True:
+    time.sleep(1)
