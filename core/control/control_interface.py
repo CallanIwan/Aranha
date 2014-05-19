@@ -16,5 +16,5 @@ class Control(Thread):
     def run(self):
         raise NotImplementedError("Should have implemented this")
 
-    def move(self, mov):
+    def poll(self):
         raise NotImplementedError("Should have implemented this")

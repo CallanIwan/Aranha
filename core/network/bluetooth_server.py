@@ -9,7 +9,7 @@ Android App: receive/send
 import time
 import base64
 from threading import Thread
-#from bluetooth import *
+from bluetooth import *
 import protocol
 
 
@@ -37,6 +37,7 @@ class BluetoothServer(Thread):
             client_sock, client_info = self.server_sock.accept()
             print("Accepted connection from ", client_info)
             BluetoothClientThread(self.server_sock, client_sock, client_info).start()
+            time.sleep(1)
         # close server socket
         self.server_sock.close()
 
