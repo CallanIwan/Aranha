@@ -7,6 +7,7 @@ public interface SpiderController {
 
     public static final SpiderMessage[] SpiderMessages = SpiderMessage.values();
     public enum SpiderMessage {
+        BLUETOOTH_DEVICE_FOUND,
         RASPBERRYPI_FOUND,
         CONNECTING_TO_RASPBERRYPI,
         CONNECTING_FAILED,
@@ -27,6 +28,12 @@ public interface SpiderController {
     public void disconnect();
 
     public void sendMessageToActivity(SpiderMessage message);
+
+    /**
+     *
+     */
+    public void send_getSpiderInfo();
+
     public void send(SpiderInstruction instruction);
 
     public void send_move(int direction);
@@ -34,12 +41,9 @@ public interface SpiderController {
     public void send_moveRight();
     public void send_moveForward();
     public void send_moveBackwards();
-
     public void send_moveUp();
     public void send_moveDown();
-
     public void send_dance();
     public void send_resetToDefaultPosition();
-
     public void send_executeScript(int scriptIndex);
 }

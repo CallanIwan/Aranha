@@ -38,8 +38,8 @@ public class ConnectActivity extends ActionBarActivity implements View.OnClickLi
 
     private EditText raspberryName;
 
-    BluetoothService mBluetoothService;
-    boolean mBluetoothIsConnected = false;
+    SpiderController mConnectService;
+    boolean mServiceIsConnected = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -86,9 +86,9 @@ public class ConnectActivity extends ActionBarActivity implements View.OnClickLi
     protected void onStop() {
         super.onStop();
 
-        if (mBluetoothIsConnected) { // Unbind from the service
+        if (mServiceIsConnected) { // Unbind from the service
             unbindService(mConnection);
-            mBluetoothIsConnected = false;
+            mServiceIsConnected = false;
         }
     }
 
@@ -120,15 +120,15 @@ public class ConnectActivity extends ActionBarActivity implements View.OnClickLi
         @Override
         public void onServiceConnected(ComponentName className, IBinder service) {
             // Get the bluetoothService class via BluetoothBinder.
-            mBluetoothService = ((BluetoothService.BluetoothBinder) service).getService();
-            mBluetoothService.discoverBluetoothDevices();
-            mBluetoothIsConnected = true;
+            mConnectService = ((BluetoothService.BluetoothBinder) service).getService();
+            // TODO: mConnectService.discoverBluetoothDevices();
+            mServiceIsConnected = true;
             Log.d(TAG, "Bluetooth service is connected");
         }
 
         @Override
         public void onServiceDisconnected(ComponentName arg0) {
-            mBluetoothIsConnected = false;
+            mServiceIsConnected = false;
             Log.d(TAG, "Bluetooth service disconnected");
         }
     };
@@ -176,17 +176,19 @@ public class ConnectActivity extends ActionBarActivity implements View.OnClickLi
     public void onClick(View view) {
 
         if(view.getId() == R.id.connectButton) {
-            if(mBluetoothIsConnected)
-                mBluetoothService.connect();
+            if(mServiceIsConnected)
+                mConnectService.connect();
             mConnectButton.setEnabled(false);
         }
         else if(view.getId() == R.id.refreshButton) {
-            if(mBluetoothIsConnected)
-                mBluetoothService.discoverBluetoothDevices();
+            if(mServiceIsConnected) {
+                // TODO: mConnectService.discoverBluetoothDevices();
+            }
         }
         else if(view.getId() == R.id.manualConnectButton) {
-            if(mBluetoothIsConnected)
-                mBluetoothService.manualConnect("00:15:83:6A:31:B7");
+            if(mServiceIsConnected) {
+                // TODO:  mConnectService.manualConnect("00:15:83:6A:31:B7");
+            }
         }
     }
 
@@ -198,8 +200,9 @@ public class ConnectActivity extends ActionBarActivity implements View.OnClickLi
         }
         @Override
         public void afterTextChanged(Editable editable) {
-            if(mBluetoothIsConnected)
-                mBluetoothService.setRaspberryPiBluetoothName(editable.toString());
+            if(mServiceIsConnected) {
+                // TODO: mConnectService.setRaspberryPiBluetoothName(editable.toString());
+            }
         }
     };
 
@@ -217,7 +220,8 @@ public class ConnectActivity extends ActionBarActivity implements View.OnClickLi
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
         if (id == R.id.action_settings) {
-            startActivity(new Intent(ConnectActivity.this, WifiDirectConnectActivity.class));
+            // TODO: startActivity(new Intent(ConnectActivity.this, WifiDirectConnectActivity.class));
+            startActivity(new Intent(ConnectActivity.this, BluetoothDiscoverDevicesActivity.class));
             return true;
         }
         return super.onOptionsItemSelected(item);

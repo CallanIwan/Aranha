@@ -17,7 +17,6 @@ import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Created by Rutger on 10-05-2014.
@@ -65,6 +64,11 @@ public class BluetoothService extends Service implements SpiderController {
     private BluetoothDevice mRaspberryPiBluetoothDevice;
     private BluetoothSpiderConnectionThread bluetoothSpiderConnectionThread;
     private String mRaspberryPiName = "raspberrypi-0";
+    private BluetoothDeviceAdapter discoveredDevicesAdapter;
+
+    public BluetoothDeviceAdapter getDiscoveredDevicesAdapter() {
+        return discoveredDevicesAdapter;
+    }
 
     @Override
     public void onCreate() {
@@ -74,6 +78,8 @@ public class BluetoothService extends Service implements SpiderController {
         IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
         registerReceiver(mBluetoothReceiver, filter); // Don't forget to unregister in onDestroy()
         Log.d(TAG,"Bluetooth receiver registered");
+
+        discoveredDevicesAdapter = new BluetoothDeviceAdapter(this);
     }
 
     @Override
@@ -102,10 +108,14 @@ public class BluetoothService extends Service implements SpiderController {
                 if(device.getName()!= null && device.getName().equals(mRaspberryPiName)) {
                     onRaspberryPiFound(device);
                 }
+
+                if(discoveredDevicesAdapter.getPosition(device) != -1) {
+                    discoveredDevicesAdapter.add(device);
+                }
             }
-            System.out.println(" ?? " + intent.getAction());
         }
     };
+
 
     public void discoverBluetoothDevices() {
         mBluetoothAdapter.cancelDiscovery();
@@ -159,7 +169,7 @@ public class BluetoothService extends Service implements SpiderController {
                     break;
 
                 case READ_MSG_FROM_RASPBERRYPI:
-                    String in = new String(Base64.decode((byte[]) msg.obj, Base64.NO_PADDING));
+                    String in = new String(Base64.decode((byte[]) msg.obj,Base64.NO_PADDING));
                    Log.d(TAG, "Received: " + in);
                     break;
             }
@@ -184,7 +194,7 @@ public class BluetoothService extends Service implements SpiderController {
 
     @Override
     public void connect() {
-        BluetoothThread btThread = new BluetoothThread(mRaspberryPiBluetoothDevice, mBluetoothConnectorMessenger);
+        BluetoothConnectToDeviceThread btThread = new BluetoothConnectToDeviceThread(mRaspberryPiBluetoothDevice, mBluetoothConnectorMessenger);
         btThread.start();
     }
 
@@ -207,6 +217,11 @@ public class BluetoothService extends Service implements SpiderController {
         } else {
             Log.d(TAG, "Cannot send MSG to activity. Activity did not provide a Messenger!");
         }
+    }
+
+    @Override
+    public void send_getSpiderInfo() {
+
     }
 
     @Override
