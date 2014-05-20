@@ -4,7 +4,7 @@ import vision.card as card
 
 
 cam = Camera()
-#find(cam.camera, 'blue')
+#find(cam.camera, 'red')
 card.findCard(cam)
 
 #main loop
