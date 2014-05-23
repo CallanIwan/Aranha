@@ -38,8 +38,8 @@ public class ConnectActivity extends ActionBarActivity implements View.OnClickLi
 
     private EditText raspberryName;
 
-    BluetoothService mBluetoothService;
-    boolean mBluetoothIsConnected = false;
+    SpiderControllerService mConnectService;
+    boolean mServiceIsConnected = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -86,11 +86,12 @@ public class ConnectActivity extends ActionBarActivity implements View.OnClickLi
     protected void onStop() {
         super.onStop();
 
-        if (mBluetoothIsConnected) { // Unbind from the service
+        if (mServiceIsConnected) { // Unbind from the service
             unbindService(mConnection);
-            mBluetoothIsConnected = false;
+            mServiceIsConnected = false;
         }
     }
+
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -108,36 +109,36 @@ public class ConnectActivity extends ActionBarActivity implements View.OnClickLi
 
     public void startBluetoothService() {
         Intent intent = new Intent(this, BluetoothService.class);
-        intent.putExtra("messageReceiver", mBluetoothServiceMessenger);
         bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
     }
 
     /**
-     * Used to connect to the BluetoothService
+     * Used to connect to the Connection Service
      */
     private ServiceConnection mConnection = new ServiceConnection() {
 
         @Override
         public void onServiceConnected(ComponentName className, IBinder service) {
-            // Get the bluetoothService class via BluetoothBinder.
-            mBluetoothService = ((BluetoothService.BluetoothBinder) service).getService();
-            mBluetoothService.discoverBluetoothDevices();
-            mBluetoothIsConnected = true;
-            Log.d(TAG, "Bluetooth service is connected");
+            // Get the SpiderControllerService class via a Binder.
+            mConnectService =  ((SpiderControllerService.SpiderControllerServiceBinder)service).getService();
+            mConnectService.setActivityMessenger(mConnectServiceMessenger);
+            mConnectService.discoverDevices();
+            mServiceIsConnected = true;
+            Log.d(TAG, "Connect service is connected");
         }
 
         @Override
         public void onServiceDisconnected(ComponentName arg0) {
-            mBluetoothIsConnected = false;
-            Log.d(TAG, "Bluetooth service disconnected");
+            mServiceIsConnected = false;
+            Log.d(TAG, "Connect service disconnected");
         }
     };
 
     /**
-     * Receives all the messages from the Bluetooth service
+     * Receives all the messages from the Connection service
      */
-    final Messenger mBluetoothServiceMessenger = new Messenger(new BluetoothServiceMessageHandler());
-    class BluetoothServiceMessageHandler extends Handler {
+    final Messenger mConnectServiceMessenger = new Messenger(new ConnectServiceMessageHandler());
+    class ConnectServiceMessageHandler extends Handler {
         @Override
         public void handleMessage(Message msg) {
 
@@ -151,6 +152,8 @@ public class ConnectActivity extends ActionBarActivity implements View.OnClickLi
                     Toast.makeText(ConnectActivity.this, "Failed to connect to the spider!", Toast.LENGTH_LONG).show();
                     mConnectedTextView.setText("Not connected");
                     mConnectButton.setEnabled(false);
+                    if(mServiceIsConnected)
+                        mConnectService.discoverDevices();
                     break;
 
                 case CONNECTED_TO_RASPBERRYPI:
@@ -165,7 +168,8 @@ public class ConnectActivity extends ActionBarActivity implements View.OnClickLi
                 case CONNECTION_LOST:
                     mConnectedTextView.setText("Not connected");
                     // Return to the first activity
-                    startActivity(new Intent(ConnectActivity.this, ConnectActivity.class));
+                    if(mServiceIsConnected)
+                        mConnectService.discoverDevices();
                     Toast.makeText(ConnectActivity.this, "Lost connection to the spider.", Toast.LENGTH_LONG).show();
                     break;
             }
@@ -176,17 +180,19 @@ public class ConnectActivity extends ActionBarActivity implements View.OnClickLi
     public void onClick(View view) {
 
         if(view.getId() == R.id.connectButton) {
-            if(mBluetoothIsConnected)
-                mBluetoothService.connect();
+            if(mServiceIsConnected)
+                mConnectService.connect();
             mConnectButton.setEnabled(false);
         }
         else if(view.getId() == R.id.refreshButton) {
-            if(mBluetoothIsConnected)
-                mBluetoothService.discoverBluetoothDevices();
+            if(mServiceIsConnected) {
+                mConnectService.discoverDevices();
+            }
         }
         else if(view.getId() == R.id.manualConnectButton) {
-            if(mBluetoothIsConnected)
-                mBluetoothService.manualConnect("00:15:83:6A:31:B7");
+            if(mServiceIsConnected) {
+                // TODO:  mConnectService.manualConnect("00:15:83:6A:31:B7");
+            }
         }
     }
 
@@ -198,8 +204,9 @@ public class ConnectActivity extends ActionBarActivity implements View.OnClickLi
         }
         @Override
         public void afterTextChanged(Editable editable) {
-            if(mBluetoothIsConnected)
-                mBluetoothService.setRaspberryPiBluetoothName(editable.toString());
+            if(mServiceIsConnected) {
+                 mConnectService.setRaspberryPiName(editable.toString());
+            }
         }
     };
 
@@ -217,7 +224,8 @@ public class ConnectActivity extends ActionBarActivity implements View.OnClickLi
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
         if (id == R.id.action_settings) {
-            startActivity(new Intent(ConnectActivity.this, WifiDirectConnectActivity.class));
+            // TODO: startActivity(new Intent(ConnectActivity.this, WifiDirectConnectActivity.class));
+            startActivity(new Intent(ConnectActivity.this, BluetoothDiscoverDevicesActivity.class));
             return true;
         }
         return super.onOptionsItemSelected(item);

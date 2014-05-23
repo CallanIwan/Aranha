@@ -8,6 +8,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.graphics.Bitmap;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
@@ -30,6 +31,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.ListView;
 
 import com.example.spider.app.R;
@@ -53,8 +55,11 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
      */
     ViewPager mViewPager;
 
-    static SpiderController mSpiderControllerService;
-    boolean mIsConnectedToService = false;
+    static ArrayAdapter sScriptsAdapter;
+    static SpiderControllerService sSpiderControllerService;
+    static boolean sIsConnectedToService = false;
+    static ImageView sImageView = null;
+    static String sScriptList = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -97,24 +102,25 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
         }
 
         connectToSpiderControllerService();
+        sScriptsAdapter = new ArrayAdapter(this, R.layout.list_view_row_item);
     }
 
     @Override
     protected void onStop() {
         super.onStop();
 
-        if (mIsConnectedToService) { // Unbind from the service
+        setCameraEnabled(false);
+        if (sIsConnectedToService) { // Unbind from the service
             unbindService(mConnection);
-            mIsConnectedToService = false;
+            sIsConnectedToService = false;
         }
     }
 
 
     public void connectToSpiderControllerService() {
         //TODO: Wifi or Bluetooth
-        if(!mIsConnectedToService) {
+        if(!sIsConnectedToService) {
             Intent intent = new Intent(this, BluetoothService.class);
-            intent.putExtra("messageReceiver", mSpiderMessenger);
             bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
         }
     }
@@ -127,14 +133,16 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
         @Override
         public void onServiceConnected(ComponentName className, IBinder service) {
             // Get the bluetoothService class via BluetoothBinder.
-            mSpiderControllerService = ((BluetoothService.BluetoothBinder) service).getService();
-            mIsConnectedToService = true;
+            sSpiderControllerService = ((SpiderControllerService.SpiderControllerServiceBinder)service).getService();
+            sSpiderControllerService.setActivityMessenger(mSpiderMessenger);
+            sSpiderControllerService.send(SpiderInstruction.requestScriptList);
+            sIsConnectedToService = true;
             Log.d(TAG, "Bluetooth service is connected");
         }
 
         @Override
         public void onServiceDisconnected(ComponentName arg0) {
-            mIsConnectedToService = false;
+            sIsConnectedToService = false;
             Log.d(TAG, "Bluetooth service disconnected");
         }
     };
@@ -155,14 +163,65 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
 
                 case CONNECTED_TO_RASPBERRYPI:
                     break;
+
+                case READ_IMAGE:
+                    //Log.d(TAG, "Trying to Set bitmap");
+                    if(sImageView != null) {
+                        sImageView.setImageBitmap((Bitmap) msg.obj);
+                    }
+                    break;
+
+                case READ_SCRIPT_LIST:
+                    String[] scripts = ((String)msg.obj).split(";");
+                    Log.d(TAG, "Received script list");
+                    sScriptsAdapter.addAll(scripts);
+                    break;
             }
         }
     }
+
+    private static int CAMERA_UPDATE_DELAY = 700;
+    private Handler requestCameraImagesHandler = new Handler();
+    private Runnable requestCameraImagesRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if(sSpiderControllerService != null) {
+                sSpiderControllerService.send_requestCameraImage();
+                requestCameraImagesHandler.postDelayed(this, CAMERA_UPDATE_DELAY);
+            }
+        }
+    };
+    public void setCameraEnabled(boolean value) {
+        if(value) {
+            requestCameraImagesHandler.postDelayed(requestCameraImagesRunnable, CAMERA_UPDATE_DELAY);
+            Log.d(TAG, "Camera is ON");
+        }
+        else {
+            requestCameraImagesHandler.removeCallbacks(requestCameraImagesRunnable);
+        }
+    }
+
+
+    // --------------------------------------------
+    //    Tabs
+    // --------------------------------------------
 
     @Override
     public void onTabSelected(ActionBar.Tab tab, FragmentTransaction fragmentTransaction) {
         // When the given tab is selected, switch to the corresponding page in the ViewPager.
         mViewPager.setCurrentItem(tab.getPosition());
+
+        switch(tab.getPosition()) {
+            case 0:
+                setCameraEnabled(true);
+                break;
+            case 1:
+                setCameraEnabled(false);
+                break;
+            case 2:
+                setCameraEnabled(false);
+                break;
+        }
     }
 
     @Override
@@ -270,19 +329,39 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
             Button upArrowButton = (Button)rootView.findViewById(R.id.upArrowButton);
             Button downArrowButton = (Button)rootView.findViewById(R.id.downArrowButton);
 
+            MainActivity.sImageView = (ImageView)rootView.findViewById(R.id.imageView);
+
+            MainActivity.sImageView.setOnClickListener(controlOnClickListener);
             leftArrowButton.setOnClickListener(controlOnClickListener);
-
-            //TODO: Add rest of the control
-
+            rightArrowButton.setOnClickListener(controlOnClickListener);
+            upArrowButton.setOnClickListener(controlOnClickListener);
+            downArrowButton.setOnClickListener(controlOnClickListener);
         }
 
         public View.OnClickListener controlOnClickListener = new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(view.getId() == R.id.leftArrowButton) {
-                    mSpiderControllerService.send_moveLeft();
-                }
 
+                if(view.getId() == R.id.leftArrowButton) {
+                    if(sIsConnectedToService)
+                        sSpiderControllerService.send(SpiderInstruction.moveLeft);
+                }
+                else if(view.getId() == R.id.rightArrowButton) {
+                    if(sIsConnectedToService)
+                        sSpiderControllerService.send(SpiderInstruction.moveRight);
+                }
+                else if(view.getId() == R.id.downArrowButton) {
+                    if(sIsConnectedToService)
+                        sSpiderControllerService.send(SpiderInstruction.moveBackwards);
+                }
+                else if(view.getId() == R.id.upArrowButton) {
+                    if(sIsConnectedToService)
+                        sSpiderControllerService.send(SpiderInstruction.moveForward);
+                }
+                else if(view.getId() == R.id.imageView) {
+                    if(sIsConnectedToService)
+                        sSpiderControllerService.send_requestCameraImage();
+                }
             }
         };
 
@@ -295,14 +374,7 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
             // Set up list adapter
             //
             final ListView listViewScripts = (ListView) rootView.findViewById(R.id.listView);
-            List<String> scriptList = new ArrayList<String>();
-            scriptList.add("Kill Balloons");
-            scriptList.add("Dance");
-            scriptList.add("Dance 2");
-            scriptList.add("Walk with pauses");
-            //TODO: Add available scripts to scriptList.
-            ArrayAdapter adapter = new ArrayAdapter(getActivity(), R.layout.list_view_row_item, scriptList);
-            listViewScripts.setAdapter(adapter);
+            listViewScripts.setAdapter(sScriptsAdapter);
             listViewScripts.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                 @Override
                 public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
@@ -339,7 +411,7 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
         if (id == R.id.action_settings) {
             return true;
         } else if( id == R.id.action_disconnect) {
-            mSpiderControllerService.disconnect();
+            sSpiderControllerService.disconnect();
             startActivity(new Intent(MainActivity.this, ConnectActivity.class));
         }
         return super.onOptionsItemSelected(item);

@@ -19,13 +19,14 @@ def find(cam, color):
     while True:#disp.isNotDone():
         frame = cam.getImage()
 
-        median = frame.medianFilter(11)
+        median = frame.medianFilter(17)
         dir = getDirection(median, color)
 
+        time.sleep(0.05)
 
-        median.drawText(dir, x=-10, color=SimpleCV.Color.CRIMSON, fontsize=84)
+        #median.drawText(dir, x=-10, color=SimpleCV.Color.CRIMSON, fontsize=84)
 
-        db.showImg(median)  # show() does not work correct
+        #db.showImg(median)  # show() does not work correct
 
 def greenOnly(value):
     #return value.hueDistance(SimpleCV.Color.GREEN, minsaturation=77, minvalue=93).threshold(80).invert()
@@ -49,6 +50,8 @@ def getDirection(img, color):
         filtered = redOnly(img)
     elif color == 'green':
         filtered = greenOnly(img)
+
+    db.showImg(filtered)
 
     sumLeft = np.sum(filtered.regionSelect(0, 0, width/2, height).getGrayNumpy())
     sumRight = np.sum(filtered.regionSelect(width/2, 0, width, height).getGrayNumpy())

@@ -16,7 +16,7 @@ import java.util.UUID;
  * Tries to establish a connection via bluetooth.
  * If successful it will start another thread which handles all the messages.
  */
-public class BluetoothThread extends Thread {
+public class BluetoothConnectToDeviceThread extends Thread {
     private static final String TAG = "BluetoothThread";
 
     private UUID MY_UUID = UUID.randomUUID();
@@ -25,7 +25,7 @@ public class BluetoothThread extends Thread {
 
     private final Messenger mMessenger;
 
-    public BluetoothThread(BluetoothDevice device, Messenger messenger) {
+    public BluetoothConnectToDeviceThread(BluetoothDevice device, Messenger messenger) {
         BluetoothSocket tmp = null;
         mmDevice = device;
         mMessenger = messenger;

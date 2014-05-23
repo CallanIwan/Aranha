@@ -7,6 +7,12 @@ public enum SpiderInstruction {
     move {
         public String toString() { return "move";  }
     },
+    moveLeft {
+        public String toString() { return "moveRight";  }
+    },
+    moveRight {
+        public String toString() { return "moveLeft";  }
+    },
     moveForward {
         public String toString() { return "moveForward";  }
     },
@@ -16,4 +22,10 @@ public enum SpiderInstruction {
     up {
         public String toString() { return "up";  }
     },
+    requestCameraImage {
+        public String toString() { return "" + ((char) 1);  }
+    },
+    requestScriptList {
+        public String toString() { return "" + ((char) 4);  }
+    }
 }

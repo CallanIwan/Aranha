@@ -20,13 +20,13 @@
         android:layout_alignParentTop="true" />
 
     <ImageButton
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
         android:id="@+id/imageButton"
         android:background="@drawable/go"
-        android:layout_alignParentBottom="true"
+        android:adjustViewBounds="true"
+        android:layout_centerVertical="true"
         android:layout_alignParentRight="true"
-        android:layout_alignParentEnd="true"
-        android:adjustViewBounds="true" />
+        android:layout_alignParentEnd="true" />
 
 </RelativeLayout>
