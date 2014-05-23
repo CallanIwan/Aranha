@@ -1,19 +1,39 @@
 """
 control/ps3_handler.py
-Basically a mapping for the PS3 controller
+Receive and sanitize output from PS3 controller
 """
 
 import control_interface as ci
-import Queue
+import time
+
+# config flags
+C_SIXAXIS = 0x01
+C_ANALOG_AXIS = 0x02
+C_PRESSURE = 0x04
+C_PRESSED = 0x08
+C_RELEASED = 0x10
+
+# movement flags
+MOV_UP = "UP"
+MOV_RIGHT = "RIGHT"
+MOV_DOWN = "DOWN"
+MOV_LEFT = "LEFT"
+MOV_INIT = "INIT"
 
 
 class PS3Handler(ci.Control):
 
-    # enable/disable sixaxis, default = False
-    sixaxis = False
+    # the control used for movement
+    movementcontrol = "L3_axis"
 
-    # queue of commands
-    cmd_queue = Queue.Queue()
+    # sanitized state of the controller
+    movementstate = MOV_INIT
+
+    # speed
+    movementspeed = 0
+
+    # enable/disable config flags
+    config_flags = C_ANALOG_AXIS | C_PRESSURE | C_PRESSED
 
     # byte 4 (value)
     JS_EVENT_BUTTON_RELEASED = 0x00
@@ -38,23 +58,50 @@ class PS3Handler(ci.Control):
 
     def __init__(self):
         super(PS3Handler, self).__init__()
-        self.file = open("/dev/input/js2", "r")
+        self.file = None
+        self.isconnected = False
 
     def run(self):
         event = []
         while True:
-            for c in self.file.read(1):
-                event += ['%02X' % ord(c)]
-                if len(event) == 8:
-                    action = int(event[6], 16)
-                    val = int(event[4], 16)
-                    name = int(event[7], 16)
-                    if not self.isinitialstate(action):
-                        if self.isbutton(action):
-                            self.cmd_queue.put((self.button_names[name], val))
-                        if self.isaxis(action) and not self.issixaxis(name):
-                            self.cmd_queue.put((self.axis_names[name], val))
-                    event = []
+            if not self.isconnected:
+                try:
+                    self.file = open("/dev/input/js0", "r")
+                    self.isconnected = True
+                except IOError:
+                    pass
+                time.sleep(1)
+            else:
+                try:
+                    data = self.file.read(8)
+                    for c in data:
+                        event += ['%02X' % ord(c)]
+                        if len(event) == 8:
+                            axisval = int(event[5], 16)
+                            action = int(event[6], 16)
+                            val = int(event[4], 16)
+                            name = int(event[7], 16)
+                            if not self.isinitialstate(action):
+                                # buttons
+                                if self.isbutton(action):
+                                    cmd = (self.button_names[name], val)
+                                    if self.ispressed(val):
+                                        self.cmd_queue.put(cmd)
+                                    elif self.isreleased(val):
+                                        self.cmd_queue.put(cmd)
+                                # axis
+                                if self.isaxis(action):
+                                    cmd = (self.axis_names[name], axisval)
+                                    if self.ispressure(name):
+                                        self.cmd_queue.put(cmd)
+                                    elif self.issixaxis(name):
+                                        self.cmd_queue.put(cmd)
+                                    elif self.isanalogaxis(name):
+                                        self.cmd_queue.put(cmd)
+                            event = []
+                    time.sleep(0.001)
+                except IOError:
+                    self.isconnected = False
 
     def poll(self):
         if self.cmd_queue.qsize() > 0:
@@ -74,9 +121,29 @@ class PS3Handler(ci.Control):
         return (c & self.JS_EVENT_INIT) != 0
 
     def ispressed(self, c):
+        if not self.config_flags & C_PRESSED:
+            return False
         return (c & self.JS_EVENT_BUTTON_PRESSED) != 0
 
+    def isreleased(self, c):
+        if not self.config_flags & C_RELEASED:
+            return False
+        return True
+
+    def ispressure(self, c):
+        if not self.config_flags & C_PRESSURE:
+            return False
+        return 8 <= c <= 19
+
+    def isanalogaxis(self, c):
+        if not self.config_flags & C_ANALOG_AXIS:
+            return False
+        return 0 <= c <= 3
+
     def issixaxis(self, c):
-        if self.sixaxis:
+        if not self.config_flags & C_SIXAXIS:
             return False
         return 4 <= c <= 6
+
+    def getmovementstate(self, action):
+        pass

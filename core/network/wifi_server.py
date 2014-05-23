@@ -4,33 +4,32 @@ Blueprint of TCP/UDP server
 """
 
 import SocketServer
+import protocol
+from threading import Thread
 
 
 class WifiServer:
 
     def __init__(self):
-        self.server = SocketServer.TCPServer(("localhost", 9999), WifiClientHandler)
+        self.server = SocketServer.TCPServer(("0.0.0.0", 9999), WifiClientHandler)
 
     def start(self):
-        print("Started TCP Server on localhost:9999")
-        self.server.serve_forever()
+        print("Started TCP Server on 0.0.0.0:9999")
+        t = Thread(target=self.server.serve_forever)
+        t.daemon = True
+        t.start()
 
 
 class WifiClientHandler(SocketServer.BaseRequestHandler):
-    """
-    The RequestHandler class for our server.
-
-    It is instantiated once per connection to the server, and must
-    override the handle() method to implement communication to the
-    client.
-    """
-
-    data = None
 
     def handle(self):
         # self.request is the TCP socket connected to the client
-        self.data = self.request.recv(1024).strip()
+        data = self.request.recv(1024)
         print "{} wrote:".format(self.client_address[0])
-        print self.data
-        # just send back the same data, but upper-cased
-        self.request.sendall(self.data.upper())
+        print data
+        if ord(data) is ord(protocol.H_SENSOR):
+            # just send back the same data, but upper-cased
+            self.request.sendall("tnx Remco 4 sensor stats brah")
+        if ord(data) is ord(protocol.H_MOV_RECV):
+            print "Remco sent: ", data
+            self.request.sendall("wow Remco, stuur je me zomaar move shizzle :)")

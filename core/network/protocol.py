@@ -4,24 +4,13 @@ This module defines the protocol which are used by the bluetooth and WiFi server
 A client has this exact protocol. A client sends its commands conform this protocol,
 so the network_handler knows which functions to call.
 """
+# end of message byte
+H_END = ("" + chr(0)) * 990
 
-# header commands
-H_MOVEMENT = 0x01
-H_VISION = 0x02
-H_END = 0xFF
+# header bytes, intended for the app to know what to receive
+H_IMAGE = "" + chr(1)
+H_SENSOR = "" + chr(2)
+H_VISION = "" + chr(3)
 
-'''
-movement commands (ps3 style)
-0x10 - 0x19
-'''
-# left stick
-MOV_N = 0x10
-MOV_NE = 0x11
-MOV_E = 0x12
-MOV_SE = 0x13
-MOV_S = 0x14
-MOV_SW = 0x15
-MOV_W = 0x16
-MOV_NW = 0x17
-
-#right stick
+# receiving header bytes
+H_MOV_RECV = "" + chr(4)
