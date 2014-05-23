@@ -1,12 +1,15 @@
 package com.aranha.spider.app;
 
 import android.bluetooth.BluetoothSocket;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
 import android.util.Base64;
 import android.util.Log;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -57,56 +60,94 @@ public class BluetoothSpiderConnectionThread extends Thread {
         //
         //  !!!!!!!!!!!!!!!!!!!!!!!!!!! TEST TEST TEST
         //
-        String test = "De app is connected. altijd connected. je moet gewoon connected zijn. ja toch? hallo hallo";
+        String test = "De app is connected.";
         writeBase64(test);
         //
         //  !!!!!!!!!!!!!!!!!!!!!!!!!!! TEST TEST TEST
         //
     }
 
+
+    public static final int PACKET_ID_IMAGE = 1;
+    public static final int PACKET_ID_SENSOR = 2;
+    public static final int PACKET_ID_VISIONSCRIPTS = 3;
+
+    public static int PACKET_SIZE = 990;
     public void run() {
-        byte[] buffer = new byte[1024];  // buffer store for the stream
+
+        byte[] buffer = new byte[PACKET_SIZE];  // buffer store for the stream
         int bytes; // bytes returned from read()
 
         // Keep listening to the InputStream until an exception occurs
         while (true) {
             try {
-                // Read from the InputStream
-                bytes = mmInStream.read(buffer);
-
-                // Send the obtained bytes to the bluetooth service
                 try {
-                    mMessenger.send(Message.obtain(null, SpiderController.SpiderMessage.READ_MSG_FROM_RASPBERRYPI.ordinal(), bytes, -1, buffer));
-                } catch (RemoteException e) {
-                    e.printStackTrace();
-                }
+                    // Read from the InputStream
+                    bytes = mmInStream.read(buffer);
 
-            } catch (IOException e) {
+                    int messageType = buffer[0];
+                    int packetCount = buffer[1];
 
-                try {
+                    if(bytes == 2)
+                        handleMessage(mmInStream, messageType, packetCount);
+
+                } catch (IOException e) {
+
                     if(isDisconnectedByUser) {
-                        Log.d(TAG, "Disconnected from the Raspberry Pi.");
+                        Log.e(TAG, "Disconnected from the Raspberry Pi.");
                         mMessenger.send(Message.obtain(null, SpiderController.SpiderMessage.CONNECTION_CLOSED.ordinal(), 0, 0));
                     }
                     else { // Connection lost by some other circumstance.
-                        Log.d(TAG, "Connection lost to Raspberry Pi.");
+                        Log.e(TAG, "Connection lost to Raspberry Pi.");
                         mMessenger.send(Message.obtain(null, SpiderController.SpiderMessage.CONNECTION_LOST.ordinal(), 0, 0));
                     }
-                } catch (RemoteException e1) {
-                    e1.printStackTrace();
+                    break;
                 }
-
-                break;
+            } catch (RemoteException e1) {
+                e1.printStackTrace();
+                Log.d(TAG, "RemoteException: Connection lost to Raspberry Pi." + e1.getMessage());
             }
         }
     }
+
+    public void handleMessage(InputStream mmInStream, int messageType, int packetCount) throws IOException, RemoteException {
+        byte[] buffer = new byte[PACKET_SIZE];
+        int bytes;
+
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(4096);
+
+        for(int i = 0; i < packetCount; i++) {
+            bytes = mmInStream.read(buffer);
+            byteArrayOutputStream.write(buffer, 0, bytes);
+        }
+
+        try {
+            switch (messageType) {
+                case PACKET_ID_IMAGE:
+                    byte[] decodedString = Base64.decode(byteArrayOutputStream.toString(), Base64.NO_PADDING);
+                    Bitmap bitmap = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+                    mMessenger.send(Message.obtain(null, SpiderController.SpiderMessage.READ_IMAGE.ordinal(), bitmap));
+                    break;
+                case PACKET_ID_VISIONSCRIPTS:
+                    String[] scriptList = Base64.decode(byteArrayOutputStream.toString(), Base64.NO_PADDING).toString().split(";");
+                    mMessenger.send(Message.obtain(null, SpiderController.SpiderMessage.READ_SCRIPT_LIST.ordinal(), scriptList));
+                    break;
+                case PACKET_ID_SENSOR:
+                    // TODO: Write code
+                    break;
+            }
+        } catch (IllegalArgumentException iae) {
+            Log.e(TAG, "Unable to decompile message with base64. " + iae.getMessage());
+        }
+    }
+
 
     /**
      * Send an instruction to the spider
      * @param instruction The instruction to send.
      */
     public void sendSpiderInstruction(SpiderInstruction instruction) {
-        write(Base64.encode(instruction.toString().getBytes(), Base64.NO_PADDING));
+        write(Base64.encode(instruction.toString().getBytes(), Base64.DEFAULT));
     }
 
     /**
@@ -114,7 +155,7 @@ public class BluetoothSpiderConnectionThread extends Thread {
      * @param input string
      */
     public void writeBase64(String input) {
-        write(Base64.encode(input.getBytes(), Base64.NO_PADDING));
+        write(Base64.encode(input.getBytes(), Base64.DEFAULT));
     }
 
     /**

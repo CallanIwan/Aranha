@@ -59,8 +59,8 @@ public class BluetoothDiscoverDevicesActivity extends Activity {
         @Override
         public void onServiceConnected(ComponentName className, IBinder service) {
             // Get the bluetoothService class via BluetoothBinder.
-            mBluetoothService = ((BluetoothService.BluetoothBinder) service).getService();
-            mBluetoothService.discoverBluetoothDevices();
+           // mBluetoothService = ((BluetoothService.BluetoothBinder) service).getService();
+            //mBluetoothService.discoverBluetoothDevices();
             mBluetoothIsConnected = true;
 
             mBluetoothAdapter = mBluetoothService.getDiscoveredDevicesAdapter();

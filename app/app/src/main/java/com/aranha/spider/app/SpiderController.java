@@ -12,31 +12,31 @@ public interface SpiderController {
         CONNECTING_TO_RASPBERRYPI,
         CONNECTING_FAILED,
         CONNECTED_TO_RASPBERRYPI,
-        CONNECTION_LOST,
-        CONNECTION_CLOSED,
-        READ_MSG_FROM_RASPBERRYPI
+        CONNECTION_LOST, // Most of the time because of outside issues
+        CONNECTION_CLOSED, // By user
+        READ_MSG_FROM_RASPBERRYPI,
+        READ_SCRIPT_LIST,
+        READ_IMAGE,
     }
 
-    public enum SocketState {
-        INIT,
-        CONNECTED,
-        LISTENING,
-        CLOSED,
-    }
+    public void sendMessageToActivity(SpiderMessage message, Object obj);
+    public void sendMessageToActivity(SpiderMessage message);
+
+
+    public void setRaspberryPiName(String name);
 
     public void connect();
     public void disconnect();
 
-    public void sendMessageToActivity(SpiderMessage message);
 
-    /**
-     *
-     */
     public void send_getSpiderInfo();
+    public void send_requestCameraImage();
 
     public void send(SpiderInstruction instruction);
+    public void send_move(int rotation);
 
-    public void send_move(int direction);
+    public void send_executeScript(int scriptIndex);
+    /*
     public void send_moveLeft();
     public void send_moveRight();
     public void send_moveForward();
@@ -45,5 +45,7 @@ public interface SpiderController {
     public void send_moveDown();
     public void send_dance();
     public void send_resetToDefaultPosition();
-    public void send_executeScript(int scriptIndex);
+    */
+
+
 }
