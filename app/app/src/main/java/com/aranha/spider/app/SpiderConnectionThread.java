@@ -13,6 +13,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.Socket;
 
 
 /**
@@ -21,7 +22,8 @@ import java.io.OutputStream;
 public class SpiderConnectionThread extends Thread {
     private static final String TAG = "BluetoothSpiderConnectionThread";
 
-    private final BluetoothSocket mmSocket;
+    private final BluetoothSocket mBluetoothSocket;
+    private final Socket mWifiSocket;
     private final InputStream mmInStream;
     private final OutputStream mmOutStream;
 
@@ -34,10 +36,11 @@ public class SpiderConnectionThread extends Thread {
      * @param messenger Message handler.
      */
     public SpiderConnectionThread(BluetoothSocket socket, Messenger messenger) {
-        mmSocket = socket;
+        mMessenger = messenger;
+        mBluetoothSocket = socket;
+        mWifiSocket = null;
         InputStream tmpIn = null;
         OutputStream tmpOut = null;
-        mMessenger = messenger;
 
         try {
             // Get the input and output streams, using temp objects because member streams are final
@@ -47,7 +50,26 @@ public class SpiderConnectionThread extends Thread {
 
         mmInStream = tmpIn;
         mmOutStream = tmpOut;
+        onConnected();
+    }
+    public SpiderConnectionThread(Socket socket, Messenger messenger) {
+        mMessenger = messenger;
+        mBluetoothSocket = null;
+        mWifiSocket = socket;
+        InputStream tmpIn = null;
+        OutputStream tmpOut = null;
 
+        try {
+            tmpIn = socket.getInputStream();
+            tmpOut = socket.getOutputStream();
+        } catch (IOException e) { }
+
+        mmInStream = tmpIn;
+        mmOutStream = tmpOut;
+        onConnected();
+    }
+
+    public void onConnected() {
         try {
             Message msg = new Message();
             msg.what = SpiderController.SpiderMessage.CONNECTED_TO_RASPBERRYPI.ordinal();
@@ -57,20 +79,14 @@ public class SpiderConnectionThread extends Thread {
             e.printStackTrace();
         }
 
-        //
         //  !!!!!!!!!!!!!!!!!!!!!!!!!!! TEST TEST TEST
-        //
         String test = "De app is connected.";
         writeBase64(test);
-        //
-        //  !!!!!!!!!!!!!!!!!!!!!!!!!!! TEST TEST TEST
-        //
     }
-
 
     public static final int PACKET_ID_IMAGE = 1;
     public static final int PACKET_ID_SENSOR = 2;
-    public static final int PACKET_ID_VISIONSCRIPTS = 3;
+    public static final int PACKET_ID_VISION_SCRIPTS = 3;
 
     public static int PACKET_SIZE = 1024;
     public void run() {
@@ -133,7 +149,7 @@ public class SpiderConnectionThread extends Thread {
                     Bitmap bitmap = BitmapFactory.decodeByteArray(decodedByteString, 0, decodedByteString.length);
                     mMessenger.send(Message.obtain(null, SpiderController.SpiderMessage.READ_IMAGE.ordinal(), bitmap));
                     break;
-                case PACKET_ID_VISIONSCRIPTS:
+                case PACKET_ID_VISION_SCRIPTS:
                     String[] scriptList = decodedString.split(";");
                     mMessenger.send(Message.obtain(null, SpiderController.SpiderMessage.READ_SCRIPT_LIST.ordinal(), scriptList));
                     break;
@@ -180,7 +196,11 @@ public class SpiderConnectionThread extends Thread {
     public void cancel() {
         try {
             isDisconnectedByUser = true;
-            mmSocket.close();
+            if(mBluetoothSocket != null)
+                mBluetoothSocket.close();
+            if(mWifiSocket != null)
+                mWifiSocket.close();
+
         } catch (IOException e) { }
     }
 }

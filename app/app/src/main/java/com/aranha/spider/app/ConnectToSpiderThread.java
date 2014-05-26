@@ -18,50 +18,53 @@ import java.util.UUID;
 public class ConnectToSpiderThread extends Thread {
     private static final String TAG = "BluetoothThread";
 
-    private UUID MY_UUID = UUID.randomUUID();
-    private final BluetoothSocket mBluetoothSocket;
-    private final Socket mWifiSocket;
-
     private final Messenger mMessenger;
 
+    private BluetoothSocket mBluetoothSocket;
+    private Socket mWifiSocket;
+
+    BluetoothDevice mBluetoothDevice;
+    private String mHostName;
+    private int mPort;
+
     public ConnectToSpiderThread(BluetoothDevice device, Messenger messenger) {
-        BluetoothSocket tmp = null;
         mMessenger = messenger;
-
-        // Get a BluetoothSocket to connect with the given BluetoothDevice
-        try {
-            tmp = device.createRfcommSocketToServiceRecord(UUID.fromString("9d7debbc-c85d-11d1-9eb4-006008c3a19a"));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        mBluetoothSocket = tmp;
-        mWifiSocket = null;
+        mBluetoothDevice = device;
     }
 
     public ConnectToSpiderThread(String hostName, int port, Messenger messenger) {
-        Socket tmp = null;
         mMessenger = messenger;
-
-        try {
-            tmp = new Socket(hostName, port);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        mBluetoothSocket = null;
-        mWifiSocket = tmp;
+        mHostName = hostName;
+        mPort = port;
     }
 
-
+    @Override
     public void run() {
 
         try {
-            mBluetoothSocket.connect();
 
+            if(mBluetoothDevice != null) {
+                // Get a BluetoothSocket to connect with the given BluetoothDevice
+                try {
+                    mBluetoothSocket = mBluetoothDevice.createRfcommSocketToServiceRecord(UUID.fromString("9d7debbc-c85d-11d1-9eb4-006008c3a19a"));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+                mBluetoothSocket.connect();
+                Thread spiderConnectionThread = new SpiderConnectionThread(mBluetoothSocket, mMessenger);
+                spiderConnectionThread.start();
+            }
+            else if(mHostName != null) {
+                try {
+                    mWifiSocket = new Socket(mHostName, mPort);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                Thread spiderConnectionThread = new SpiderConnectionThread(mWifiSocket, mMessenger);
+                spiderConnectionThread.start();
+            }
             // Do work to manage the connection (in a separate thread)
-            Thread bluetoothToSpiderThread = new BluetoothSpiderConnectionThread(mBluetoothSocket, mMessenger);
-            bluetoothToSpiderThread.start();
             System.out.println("Starting spin connection thread.");
 
         } catch (IOException closeException) {

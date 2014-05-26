@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
 import android.os.Messenger;
+import android.os.RemoteException;
 import android.util.Log;
 
 /**
@@ -13,11 +14,6 @@ import android.util.Log;
 public abstract class SpiderControllerService extends Service implements SpiderController {
     private static final String TAG = "SpiderControllerService";
 
-    /**
-     * Sends a message to the last activity which connected to this service
-     * @param message a message related to the spider
-     */
-    public abstract void sendMessageToActivity(SpiderMessage message);
 
 
     public abstract void discoverDevices();
@@ -31,6 +27,38 @@ public abstract class SpiderControllerService extends Service implements SpiderC
     public void setActivityMessenger(Messenger messenger) {
         this.mActivityMessenger = messenger;
     }
+
+    /**
+     * Sends a message to the last activity which connected to this service
+     * @param message a message related to the spider
+     */
+    public void sendMessageToActivity(SpiderMessage message) {
+        if (mActivityMessenger != null) {
+            //Log.d(TAG, "Sending message to activity: " + message);
+            try {
+                mActivityMessenger.send(android.os.Message.obtain(null, message.ordinal(), 0, 0));
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        } else {
+            Log.d(TAG, "Cannot send MSG to activity. Activity did not provide a Messenger!");
+        }
+    }
+
+
+    public void sendMessageToActivity(SpiderMessage message, Object obj) {
+        if (mActivityMessenger != null) {
+            Log.d(TAG, "Sending Object message to activity: " + message);
+            try {
+                mActivityMessenger.send(android.os.Message.obtain(null, message.ordinal(), obj));
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        } else {
+            Log.d(TAG, "Cannot send MSG to activity. Activity did not provide a Messenger!");
+        }
+    }
+
 
     /**
      * The binder which Activities (clients) use to communicate with this service.

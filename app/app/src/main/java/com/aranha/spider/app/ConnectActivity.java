@@ -76,7 +76,7 @@ public class ConnectActivity extends ActionBarActivity implements View.OnClickLi
                 Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
                 startActivityForResult(enableBtIntent, REQUEST_ENABLE_BLUETOOTH);
             } else {
-                startBluetoothService();
+                startConnectionService();
             }
         }
 
@@ -99,7 +99,7 @@ public class ConnectActivity extends ActionBarActivity implements View.OnClickLi
 
             case REQUEST_ENABLE_BLUETOOTH:
                 if(resultCode == Activity.RESULT_OK) { // User pressed 'Allow' when asked to activate bluetooth.
-                    startBluetoothService();
+                    startConnectionService();
                 } else if (resultCode == Activity.RESULT_CANCELED) {
                     //TODO: close application
                 }
@@ -107,9 +107,11 @@ public class ConnectActivity extends ActionBarActivity implements View.OnClickLi
         }
     }
 
-    public void startBluetoothService() {
-        Intent intent = new Intent(this, BluetoothService.class);
-        bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+    public void startConnectionService() {
+        if(!mServiceIsConnected) {
+            Intent intent = new Intent(this, WifiService.class);
+            bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+        }
     }
 
     /**
@@ -160,6 +162,8 @@ public class ConnectActivity extends ActionBarActivity implements View.OnClickLi
                     mConnectedTextView.setText("Connected!");
                     mConnectButton.setEnabled(false);
                     // Start the main controller screen
+                    Intent mainActivityIntent = new Intent(new Intent(ConnectActivity.this, MainActivity.class));
+                    mainActivityIntent.putExtra("ServiceType", 0);
                     startActivity(new Intent(ConnectActivity.this, MainActivity.class));
                     Toast.makeText(ConnectActivity.this, "Connected to the spider!", Toast.LENGTH_LONG).show();
                     break;
