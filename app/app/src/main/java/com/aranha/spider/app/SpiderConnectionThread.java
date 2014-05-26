@@ -18,7 +18,7 @@ import java.io.OutputStream;
 /**
  * Handles all the communication between the Raspberry Pi and the App.
  */
-public class BluetoothSpiderConnectionThread extends Thread {
+public class SpiderConnectionThread extends Thread {
     private static final String TAG = "BluetoothSpiderConnectionThread";
 
     private final BluetoothSocket mmSocket;
@@ -33,7 +33,7 @@ public class BluetoothSpiderConnectionThread extends Thread {
      * @param socket A connected socket.
      * @param messenger Message handler.
      */
-    public BluetoothSpiderConnectionThread(BluetoothSocket socket, Messenger messenger) {
+    public SpiderConnectionThread(BluetoothSocket socket, Messenger messenger) {
         mmSocket = socket;
         InputStream tmpIn = null;
         OutputStream tmpOut = null;
@@ -72,7 +72,7 @@ public class BluetoothSpiderConnectionThread extends Thread {
     public static final int PACKET_ID_SENSOR = 2;
     public static final int PACKET_ID_VISIONSCRIPTS = 3;
 
-    public static int PACKET_SIZE = 990;
+    public static int PACKET_SIZE = 1024;
     public void run() {
 
         byte[] buffer = new byte[PACKET_SIZE];  // buffer store for the stream
@@ -86,10 +86,11 @@ public class BluetoothSpiderConnectionThread extends Thread {
                     bytes = mmInStream.read(buffer);
 
                     int messageType = buffer[0];
-                    int packetCount = buffer[1];
+                    int packetCount =  (int) buffer[1] & 0xff;;
 
-                    if(bytes == 2)
+                    if(bytes == 2) {
                         handleMessage(mmInStream, messageType, packetCount);
+                    }
 
                 } catch (IOException e) {
 
@@ -116,20 +117,24 @@ public class BluetoothSpiderConnectionThread extends Thread {
 
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(4096);
 
+        Log.d(TAG, "Receiving a message: " + messageType + " - packets: " + packetCount);
         for(int i = 0; i < packetCount; i++) {
             bytes = mmInStream.read(buffer);
             byteArrayOutputStream.write(buffer, 0, bytes);
+           // Log.d(TAG, " ?? " + byteArrayOutputStream.size() + " " + bytes + " - " + new String(buffer, "UTF-8").substring(0, bytes));
         }
 
         try {
+            byte[] decodedByteString = Base64.decode(byteArrayOutputStream.toByteArray(), Base64.NO_PADDING);
+            String decodedString = new String(decodedByteString);
+
             switch (messageType) {
                 case PACKET_ID_IMAGE:
-                    byte[] decodedString = Base64.decode(byteArrayOutputStream.toString(), Base64.NO_PADDING);
-                    Bitmap bitmap = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+                    Bitmap bitmap = BitmapFactory.decodeByteArray(decodedByteString, 0, decodedByteString.length);
                     mMessenger.send(Message.obtain(null, SpiderController.SpiderMessage.READ_IMAGE.ordinal(), bitmap));
                     break;
                 case PACKET_ID_VISIONSCRIPTS:
-                    String[] scriptList = Base64.decode(byteArrayOutputStream.toString(), Base64.NO_PADDING).toString().split(";");
+                    String[] scriptList = decodedString.split(";");
                     mMessenger.send(Message.obtain(null, SpiderController.SpiderMessage.READ_SCRIPT_LIST.ordinal(), scriptList));
                     break;
                 case PACKET_ID_SENSOR:
@@ -139,6 +144,7 @@ public class BluetoothSpiderConnectionThread extends Thread {
         } catch (IllegalArgumentException iae) {
             Log.e(TAG, "Unable to decompile message with base64. " + iae.getMessage());
         }
+
     }
 
 
