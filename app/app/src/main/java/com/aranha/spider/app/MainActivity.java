@@ -33,6 +33,7 @@ import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import com.example.spider.app.R;
 
@@ -57,6 +58,7 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
 
     static ArrayAdapter sScriptsAdapter;
     static SpiderControllerService sSpiderControllerService;
+    static int spiderControllerServiceType;
     static boolean sIsConnectedToService = false;
     static ImageView sImageView = null;
     static String sScriptList = null;
@@ -101,8 +103,10 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
                             .setTabListener(this));
         }
 
-        connectToSpiderControllerService();
         sScriptsAdapter = new ArrayAdapter(this, R.layout.list_view_row_item);
+        spiderControllerServiceType = getIntent().getIntExtra("ServiceType", -1);
+
+        connectToSpiderControllerService(spiderControllerServiceType);
     }
 
     @Override
@@ -117,11 +121,21 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
     }
 
 
-    public void connectToSpiderControllerService() {
-        //TODO: Wifi or Bluetooth
+    public void connectToSpiderControllerService(int spiderControllerServiceType) {
+
         if(!sIsConnectedToService) {
-            Intent intent = new Intent(this, BluetoothService.class);
-            bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+            Intent intent;
+            switch (spiderControllerServiceType) {
+                case 0:
+                    intent = new Intent(this, WifiService.class);
+                    bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+                    break;
+
+                case 1:
+                    intent = new Intent(this, WifiService.class);
+                    bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+                    break;
+            }
         }
     }
 
@@ -155,14 +169,6 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
         @Override
         public void handleMessage(Message msg) {
             switch (SpiderController.SpiderMessages[msg.what]) {
-                case RASPBERRYPI_FOUND:
-                    break;
-
-                case CONNECTING_FAILED:
-                    break;
-
-                case CONNECTED_TO_RASPBERRYPI:
-                    break;
 
                 case READ_IMAGE:
                     //Log.d(TAG, "Trying to Set bitmap");
@@ -172,17 +178,24 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
                     break;
 
                 case READ_SCRIPT_LIST:
-                    String[] scripts = ((String)msg.obj).split(";");
+                    String[] scripts = (String[])msg.obj;
                     Log.d(TAG, "Received script list");
                     sScriptsAdapter.addAll(scripts);
                     break;
+
+                case CONNECTION_CLOSED:
+                case CONNECTION_LOST:
+                    startActivity(new Intent(MainActivity.this, ConnectActivity.class));
+                    Toast.makeText(MainActivity.this, "Lost Connection to the spider!", Toast.LENGTH_LONG).show();
+                    break;
+
             }
         }
     }
 
-    private static int CAMERA_UPDATE_DELAY = 700;
-    private Handler requestCameraImagesHandler = new Handler();
-    private Runnable requestCameraImagesRunnable = new Runnable() {
+    private static int CAMERA_UPDATE_DELAY = 450;
+    private static Handler requestCameraImagesHandler = new Handler();
+    private static Runnable requestCameraImagesRunnable = new Runnable() {
         @Override
         public void run() {
             if(sSpiderControllerService != null) {
@@ -191,7 +204,7 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
             }
         }
     };
-    public void setCameraEnabled(boolean value) {
+    public static void setCameraEnabled(boolean value) {
         if(value) {
             requestCameraImagesHandler.postDelayed(requestCameraImagesRunnable, CAMERA_UPDATE_DELAY);
             Log.d(TAG, "Camera is ON");
@@ -330,8 +343,8 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
             Button downArrowButton = (Button)rootView.findViewById(R.id.downArrowButton);
 
             MainActivity.sImageView = (ImageView)rootView.findViewById(R.id.imageView);
-
             MainActivity.sImageView.setOnClickListener(controlOnClickListener);
+
             leftArrowButton.setOnClickListener(controlOnClickListener);
             rightArrowButton.setOnClickListener(controlOnClickListener);
             upArrowButton.setOnClickListener(controlOnClickListener);
@@ -360,7 +373,7 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
                 }
                 else if(view.getId() == R.id.imageView) {
                     if(sIsConnectedToService)
-                        sSpiderControllerService.send_requestCameraImage();
+                        setCameraEnabled(false);
                 }
             }
         };
