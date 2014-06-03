@@ -9,6 +9,8 @@ if sys.platform != "win32":
 else:
     disp = SimpleCV.Display()
 
+#streams the image over the jpegStream if we are on an RPI
+#if on windows (main dev-env) display the image in a window
 def showImg(img):
     if js != 0:
         img.save(js.framebuffer)

@@ -62,11 +62,12 @@ class Grid(object):
 
     #todo: fully test if this grabs all 8 bounding tiles
     def isConnectedCountNot(self, pos, flag):
-        return  8 - self.isConnectedCount(pos, flag)
+        return  9 - self.isConnectedCount(pos, flag)
 
     def isConnectedCount(self, pos, flag):
         (x, y) = pos
         count = \
+            pos[x][y]         | flag + \
             pos[x+1][y+1]     | flag + \
             pos[x-1][y-1 ]    | flag + \
             pos[x-1][y+1 ]    | flag + \
