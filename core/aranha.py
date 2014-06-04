@@ -1,3 +1,9 @@
+"""
+aranha.py
+Start control & network handler.
+Controls get polled here, TODO: movements are given to the embedded software.
+"""
+
 from threading import Thread
 import time
 from network import network_handler
