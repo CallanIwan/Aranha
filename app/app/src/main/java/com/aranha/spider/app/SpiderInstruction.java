@@ -26,6 +26,6 @@ public enum SpiderInstruction {
         public String toString() { return "" + ((char) 1);  }
     },
     requestScriptList {
-        public String toString() { return "" + ((char) 4);  }
+        public String toString() { return "" + ((char) 3);  }
     }
 }

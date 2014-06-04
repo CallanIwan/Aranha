@@ -6,10 +6,8 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.graphics.Bitmap;
 import android.os.Handler;
 import android.os.Messenger;
-import android.os.RemoteException;
 import android.util.Log;
 
 import java.util.ArrayList;
@@ -23,7 +21,7 @@ public class BluetoothService extends SpiderControllerService {
 
     private BluetoothAdapter mBluetoothAdapter;
     private BluetoothDevice mRaspberryPiBluetoothDevice;
-    private BluetoothSpiderConnectionThread mBluetoothSpiderConnectionThread;
+    private SpiderConnectionThread mSpiderConnectionThread;
     private String mRaspberryPiName = "raspberrypi-0";
     private BluetoothDeviceAdapter discoveredDevicesAdapter;
 
@@ -93,8 +91,8 @@ public class BluetoothService extends SpiderControllerService {
 
             switch(SpiderController.SpiderMessages[msg.what]) {
                 case CONNECTED_TO_RASPBERRYPI:
-                    if(msg.obj != null && msg.obj.getClass() == BluetoothSpiderConnectionThread.class) {
-                        mBluetoothSpiderConnectionThread = (BluetoothSpiderConnectionThread)msg.obj;
+                    if(msg.obj != null && msg.obj.getClass() == SpiderConnectionThread.class) {
+                        mSpiderConnectionThread = (SpiderConnectionThread)msg.obj;
                         Log.d(TAG, "Bluetooth connection thread established");
                     }
                     sendMessageToActivity(SpiderMessage.CONNECTED_TO_RASPBERRYPI);
@@ -102,19 +100,19 @@ public class BluetoothService extends SpiderControllerService {
 
                 case CONNECTING_FAILED:
                     mRaspberryPiBluetoothDevice = null;
-                    mBluetoothSpiderConnectionThread = null;
+                    mSpiderConnectionThread = null;
                     sendMessageToActivity(SpiderMessage.CONNECTING_FAILED);
                     break;
 
                 case CONNECTION_CLOSED:
                     mRaspberryPiBluetoothDevice = null;
-                    mBluetoothSpiderConnectionThread = null;
+                    mSpiderConnectionThread = null;
                     sendMessageToActivity(SpiderMessage.CONNECTION_CLOSED);
                     break;
 
                 case CONNECTION_LOST:
                     mRaspberryPiBluetoothDevice = null;
-                    mBluetoothSpiderConnectionThread = null;
+                    mSpiderConnectionThread = null;
                     sendMessageToActivity(SpiderMessage.CONNECTION_LOST);
                     break;
 
@@ -150,33 +148,6 @@ public class BluetoothService extends SpiderControllerService {
     }
 
     @Override
-    public void sendMessageToActivity(SpiderMessage message, Object obj) {
-        if (mActivityMessenger != null) {
-            Log.d(TAG, "Sending Object message to activity: " + message);
-            try {
-                mActivityMessenger.send(android.os.Message.obtain(null, message.ordinal(), obj));
-            } catch (RemoteException e) {
-                e.printStackTrace();
-            }
-        } else {
-            Log.d(TAG, "Cannot send MSG to activity. Activity did not provide a Messenger!");
-        }
-    }
-
-    public void sendMessageToActivity(SpiderMessage message) {
-        if (mActivityMessenger != null) {
-            Log.d(TAG, "Sending message to activity: " + message);
-            try {
-                mActivityMessenger.send(android.os.Message.obtain(null, message.ordinal(), 0, 0));
-            } catch (RemoteException e) {
-                e.printStackTrace();
-            }
-        } else {
-            Log.d(TAG, "Cannot send MSG to activity. Activity did not provide a Messenger!");
-        }
-    }
-
-    @Override
     public void setRaspberryPiName(String name) {
         mRaspberryPiName = name;
     }
@@ -192,14 +163,14 @@ public class BluetoothService extends SpiderControllerService {
 
     @Override
     public void connect() {
-        BluetoothConnectToDeviceThread btThread = new BluetoothConnectToDeviceThread(mRaspberryPiBluetoothDevice, mBluetoothConnectorMessenger);
+        ConnectToSpiderThread btThread = new ConnectToSpiderThread(mRaspberryPiBluetoothDevice, mBluetoothConnectorMessenger);
         btThread.start();
     }
 
     @Override
     public void disconnect() {
-        if(mBluetoothSpiderConnectionThread != null)
-            mBluetoothSpiderConnectionThread.cancel();
+        if(mSpiderConnectionThread != null)
+            mSpiderConnectionThread.cancel();
     }
 
     @Override
@@ -209,14 +180,14 @@ public class BluetoothService extends SpiderControllerService {
 
     @Override
     public void send_requestCameraImage() {
-        if(mBluetoothSpiderConnectionThread != null)
-            mBluetoothSpiderConnectionThread.sendSpiderInstruction(SpiderInstruction.requestCameraImage);
+        if(mSpiderConnectionThread != null)
+            mSpiderConnectionThread.sendSpiderInstruction(SpiderInstruction.requestCameraImage);
     }
 
     @Override
     public void send(SpiderInstruction instruction) {
-        if(mBluetoothSpiderConnectionThread != null)
-            mBluetoothSpiderConnectionThread.sendSpiderInstruction(instruction);
+        if(mSpiderConnectionThread != null)
+            mSpiderConnectionThread.sendSpiderInstruction(instruction);
     }
 
     @Override
