@@ -3,61 +3,47 @@ import time
 import json
 import SimpleCV
 
-
-import PIL
+from navigator.NetworkManager import NetworkManager
+from navigator import OilStateMachine
+from navigator.OilStateMachine import OilStateMachine, startState
 from vision.CardFinder import CardFinder
 from vision.BalloonFinder import BalloonFinder
 from vision.camera import Camera
 
 
+
 class Client(object):
     cam = None
-    socket = None
 
     def __init__(self, ip=None):
             self.cam = Camera(ip)
-
-    def fetchState(self):
-        response = self.socket.recv(1024)
-        print "Received: {}".format(response)
-
-    def fetchMode(self):
-        return 'balloon'
-
-    def sendCommand(self, cmd):
-        self.socket.sendall(cmd)
+            self.networkManager = NetworkManager(ip)
 
 
-
-
-    def connectToStream(self, ip, port):
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect((ip, port))
-        return s
 
     def run(self):
-
-        balloonFinder = BalloonFinder()
-        cardFinder = CardFinder()
+        #create the 3 "mode object"
+        self.balloonFinder = BalloonFinder()
+        self.cardFinder = CardFinder()
+        self.fsm = OilStateMachine()
 
         while True:
-            if self.socket != None:
-                self.sendCommand(chr(3) + "forward")
-                self.fetchState()
-
-            mode = self.fetchMode()
+            mode = self.networkManager.fetchMode()
             frame = self.cam.getImage()
 
+            #switch-statement to select the mode (given by driver @ raspberry)
             if mode == 'card':
-                cmd =  cardFinder.findColorOrder(frame)
-                print json.dumps(cmd)
+                cmd =  self.cardFinder.findColorOrder(frame)
+                print json.dumps(cmd) #check validity of the color order & json format
             elif mode == 'balloon':
-                cmd = balloonFinder.findBalloon(frame, 'red')
-                #print json.dumps(cmd)
-                #self.sendCommand(cmd)
-                #print cmd
+                cmd = self.balloonFinder.findBalloon(frame, 'blue')
+            #the oilfinder state-machine does not return periodically, but handles a main loop itself
+            #todo: make the oilFinder interuptable
+            elif mode == "oil":
+                self.fsm.run(startState, self.networkManager)
             elif mode == 'idle':
                 time.sleep(0.3);
 
-c = Client()#"http://10.0.0.2:8080/?action=stream&dummy=.mjpg")
+#c = Client()
+c = Client("10.0.0.2")
 c.run()

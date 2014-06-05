@@ -1,8 +1,8 @@
 """
-control/ext_control_handler.py
-Basically a wrapper to real external controller functions
-Handles the commands which have to do with receiving commands from clients
-connected to the servers.
+control/control_interface.py
+These functions are the simplest definition of a control handler.
+run(): poll data
+poll(): poll queue (queue contains the polled data)
 """
 
 from threading import Thread

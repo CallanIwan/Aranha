@@ -1,11 +1,15 @@
 """
-vision/wifi_server.py
-Blueprint of TCP/UDP server
+network/wifi_server.py
+Starts a TCP server, which is going to connect to the App
+and the Commandcenter.
+Receives and sends data from/to client.
+Android App: receive/send
 """
 
 import SocketServer
 import protocol
 from threading import Thread
+import base64
 
 
 class WifiServer:
@@ -15,7 +19,7 @@ class WifiServer:
 
     def start(self):
         print("Started TCP Server on 0.0.0.0:9999")
-        t = Thread(target=self.server.serve_forever)
+        t = Thread(target=self.server.serve_forever)    # start tcpserver inside thread to prevent locking main thread
         t.daemon = True
         t.start()
 
@@ -27,9 +31,11 @@ class WifiClientHandler(SocketServer.BaseRequestHandler):
         data = self.request.recv(1024)
         print "{} wrote:".format(self.client_address[0])
         print data
-        if ord(data) is ord(protocol.H_SENSOR):
-            # just send back the same data, but upper-cased
-            self.request.sendall("tnx Remco 4 sensor stats brah")
-        if ord(data) is ord(protocol.H_MOV_RECV):
-            print "Remco sent: ", data
-            self.request.sendall("wow Remco, stuur je me zomaar move shizzle :)")
+        print len(data)
+        protocol.handle(self, data)
+
+    def encode_and_send(self, header, msg):
+        msg = base64.b64encode(msg)
+        print "strlen msg:", len(msg)
+        self.request.sendall(header + "" + str(len(msg)) + chr(0))
+        self.request.sendall(msg)
