@@ -9,11 +9,8 @@ import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
-import android.os.Bundle;
 import android.os.Handler;
-import android.os.IBinder;
 import android.os.Messenger;
-import android.os.RemoteException;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -24,10 +21,6 @@ import java.util.List;
  */
 public class WifiService  extends SpiderControllerService {
     private static final String TAG = "WifiService";
-
-    // --------------------------------------------
-    //    Set up WiFi
-    // --------------------------------------------
 
     public static String raspberryIP = "10.0.0.2";
     public static int raspberryPort = 9999;
@@ -199,18 +192,24 @@ public class WifiService  extends SpiderControllerService {
                     }
                 }
                 else if(NetworkInfo.State.CONNECTING.equals(nwInfo.getState())) {
-                    Toast.makeText(WifiService.this, "Trying to connect to the spidah", Toast.LENGTH_LONG).show();
+                    Toast.makeText(WifiService.this, "Trying to connect to the spidar", Toast.LENGTH_LONG).show();
                 }
             }
         }
     };
 
     public void setIsConnected(boolean value) {
+        if(isConnected == value) {
+            return;
+        }
+
         isConnected = value;
 
+        Log.d(TAG, "Starting ConnectToSpiderThread");
+
         if(value) {
-            ConnectToSpiderThread btThread = new ConnectToSpiderThread(raspberryIP, raspberryPort, mBluetoothConnectorMessenger);
-            btThread.start();
+            ConnectToSpiderThread thread = new ConnectToSpiderThread(raspberryIP, raspberryPort, mWifiConnectionMessenger);
+            thread.start();
         } else {
             sendMessageToActivity(SpiderMessage.CONNECTION_CLOSED);
         }
@@ -219,33 +218,26 @@ public class WifiService  extends SpiderControllerService {
     /**
      * The message handler. This receives all the incoming messages from the Raspberry Pi.
      */
-    final Messenger mBluetoothConnectorMessenger = new Messenger(new BluetoothConnectionMessenger());
-    class BluetoothConnectionMessenger extends Handler {
+    final Messenger mWifiConnectionMessenger = new Messenger(new WifiConnectionMessenger());
+    class WifiConnectionMessenger extends Handler {
         @Override
         public void handleMessage(android.os.Message msg) {
 
-            switch(SpiderController.SpiderMessages[msg.what]) {
+            SpiderMessage spiderMsg = SpiderController.SpiderMessages[msg.what];
+            switch(spiderMsg) {
                 case CONNECTED_TO_RASPBERRYPI:
                     if(msg.obj != null && msg.obj.getClass() == SpiderConnectionThread.class) {
                         mSpiderConnectionThread = (SpiderConnectionThread)msg.obj;
-                        Log.d(TAG, "Bluetooth connection thread established");
+                        Log.d(TAG, "Wifi connection thread established");
                     }
                     sendMessageToActivity(SpiderMessage.CONNECTED_TO_RASPBERRYPI);
                     break;
 
                 case CONNECTING_FAILED:
-                    mSpiderConnectionThread = null;
-                    sendMessageToActivity(SpiderMessage.CONNECTING_FAILED);
-                    break;
-
                 case CONNECTION_CLOSED:
-                    mSpiderConnectionThread = null;
-                    sendMessageToActivity(SpiderMessage.CONNECTION_CLOSED);
-                    break;
-
                 case CONNECTION_LOST:
                     mSpiderConnectionThread = null;
-                    sendMessageToActivity(SpiderMessage.CONNECTION_LOST);
+                    sendMessageToActivity(spiderMsg);
                     break;
 
                 case READ_MSG_FROM_RASPBERRYPI:
@@ -279,10 +271,9 @@ public class WifiService  extends SpiderControllerService {
 
     }
 
-
     @Override
     public void connect() {
-        //sendMessageToActivity(SpiderMessage.CONNECTED_TO_RASPBERRYPI);
+        //
     }
 
     @Override
@@ -294,27 +285,14 @@ public class WifiService  extends SpiderControllerService {
     }
 
     @Override
-    public void send_getSpiderInfo() {
-
-    }
-
-    @Override
-    public void send_requestCameraImage() {
-
-    }
-
-    @Override
     public void send(SpiderInstruction instruction) {
-
+        if(mSpiderConnectionThread != null)
+            mSpiderConnectionThread.sendSpiderInstruction(instruction);
     }
 
     @Override
-    public void send_move(int direction) {
-
-    }
-
-    @Override
-    public void send_executeScript(int scriptIndex) {
-
+    public void send(SpiderInstruction instruction, String extraData) {
+        if(mSpiderConnectionThread != null)
+            mSpiderConnectionThread.sendSpiderInstruction(instruction, extraData);
     }
 }

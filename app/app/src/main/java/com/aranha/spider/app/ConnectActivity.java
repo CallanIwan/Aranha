@@ -10,6 +10,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.text.Editable;
@@ -38,6 +39,7 @@ public class ConnectActivity extends ActionBarActivity implements View.OnClickLi
 
     private EditText raspberryName;
 
+    Class<? extends SpiderControllerService> mSelectedConnectServiceClass = BluetoothService.class;
     SpiderControllerService mConnectService;
     boolean mServiceIsConnected = false;
 
@@ -60,33 +62,60 @@ public class ConnectActivity extends ActionBarActivity implements View.OnClickLi
 
         raspberryName = (EditText)findViewById(R.id.raspberryName);
         raspberryName.addTextChangedListener(textwatcher);
+
+        final ActionBar actionBar = getSupportActionBar();
+        actionBar.setDisplayHomeAsUpEnabled(true);
+
+        try {
+            String serviceClassString = getIntent().getStringExtra("ServiceClass");
+            Class serviceClass = Class.forName(serviceClassString);
+            if(serviceClass != null) {
+                mSelectedConnectServiceClass = serviceClass;
+                Log.d(TAG, "Serviceclass selected: " + serviceClass);
+                startConnectionService();
+            } else {
+                Log.e(TAG, "Cannot connect to the SpiderController service! (class not found)");
+            }
+        } catch (NullPointerException e) {
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
     protected void onStart() {
         super.onStart();
 
-        BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        System.out.println("Checking for bluetooth ?");
-        if (mBluetoothAdapter == null) {
-            // Device does not support Bluetooth
-        } else {
-            if (!mBluetoothAdapter.isEnabled()) {
-                System.out.println("Trying to enable bluetooth");
-                Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-                startActivityForResult(enableBtIntent, REQUEST_ENABLE_BLUETOOTH);
+        if(mSelectedConnectServiceClass != null && mSelectedConnectServiceClass == BluetoothService.class) {
+            BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+            Log.d(TAG, "onStart()");
+
+
+
+            if (mBluetoothAdapter == null) {
+                // Device does not support Bluetooth
             } else {
-                startConnectionService();
+                if (!mBluetoothAdapter.isEnabled()) {
+                    System.out.println("Trying to enable bluetooth");
+                    Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+                    startActivityForResult(enableBtIntent, REQUEST_ENABLE_BLUETOOTH);
+                } else {
+                    startConnectionService();
+                }
             }
         }
-
     }
 
     @Override
     protected void onStop() {
         super.onStop();
 
-        if (mServiceIsConnected) { // Unbind from the service
+        // Unbind from the service
+        unbindService();
+    }
+
+    public void unbindService() {
+        if (mServiceIsConnected) {
             unbindService(mConnection);
             mServiceIsConnected = false;
         }
@@ -107,9 +136,12 @@ public class ConnectActivity extends ActionBarActivity implements View.OnClickLi
         }
     }
 
+     /**
+     * Start the connection service
+     */
     public void startConnectionService() {
         if(!mServiceIsConnected) {
-            Intent intent = new Intent(this, WifiService.class);
+            Intent intent = new Intent(this, mSelectedConnectServiceClass);
             bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
         }
     }
@@ -163,8 +195,8 @@ public class ConnectActivity extends ActionBarActivity implements View.OnClickLi
                     mConnectButton.setEnabled(false);
                     // Start the main controller screen
                     Intent mainActivityIntent = new Intent(new Intent(ConnectActivity.this, MainActivity.class));
-                    mainActivityIntent.putExtra("ServiceType", 0);
-                    startActivity(new Intent(ConnectActivity.this, MainActivity.class));
+                    mainActivityIntent.putExtra("ServiceClass", mSelectedConnectServiceClass.getName());
+                    startActivity(mainActivityIntent);
                     Toast.makeText(ConnectActivity.this, "Connected to the spider!", Toast.LENGTH_LONG).show();
                     break;
 
@@ -231,6 +263,10 @@ public class ConnectActivity extends ActionBarActivity implements View.OnClickLi
             // TODO: startActivity(new Intent(ConnectActivity.this, WifiDirectConnectActivity.class));
             startActivity(new Intent(ConnectActivity.this, BluetoothDiscoverDevicesActivity.class));
             return true;
+        }
+        else if(id == 16908332 /* R.id.home doesn't work*/ ) {
+            unbindService();
+            startActivity(new Intent(ConnectActivity.this, ConnectionSelect.class));
         }
         return super.onOptionsItemSelected(item);
     }

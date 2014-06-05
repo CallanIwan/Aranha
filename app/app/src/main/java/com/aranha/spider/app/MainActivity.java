@@ -9,6 +9,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
@@ -55,10 +56,13 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
      * The {@link ViewPager} that will host the section contents.
      */
     ViewPager mViewPager;
+    public static final int PAGE_ID_CONTROL = 0;
+    public static final int PAGE_ID_INFO = 1;
+    public static final int PAGE_ID_SCRIPTS = 2;
 
     static ArrayAdapter sScriptsAdapter;
     static SpiderControllerService sSpiderControllerService;
-    static int spiderControllerServiceType;
+    static Class<? extends SpiderControllerService> spiderControllerServiceType;
     static boolean sIsConnectedToService = false;
     static ImageView sImageView = null;
     static String sScriptList = null;
@@ -104,9 +108,33 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
         }
 
         sScriptsAdapter = new ArrayAdapter(this, R.layout.list_view_row_item);
-        spiderControllerServiceType = getIntent().getIntExtra("ServiceType", -1);
 
-        connectToSpiderControllerService(spiderControllerServiceType);
+        try {
+            String test = getIntent().getStringExtra("ServiceClass");
+            Class serviceClass = Class.forName(test);
+            if(serviceClass != null) {
+                bindToService(serviceClass);
+            }  else {
+                Log.e(TAG, "Cannot connect to the SpiderController service! (class not found)");
+            }
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    protected void onPause () {
+        super.onPause();
+        setCameraEnabled(false);
+    }
+
+    @Override
+    protected void onResume () {
+        super.onResume();
+
+        if(mViewPager.getCurrentItem() == 0) {
+            setCameraEnabled(true);
+        }
     }
 
     @Override
@@ -120,22 +148,10 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
         }
     }
 
-
-    public void connectToSpiderControllerService(int spiderControllerServiceType) {
-
+    public void bindToService(Class<? extends SpiderControllerService> serviceClass) {
         if(!sIsConnectedToService) {
-            Intent intent;
-            switch (spiderControllerServiceType) {
-                case 0:
-                    intent = new Intent(this, WifiService.class);
-                    bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
-                    break;
-
-                case 1:
-                    intent = new Intent(this, WifiService.class);
-                    bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
-                    break;
-            }
+            Intent intent = new Intent(this, serviceClass);
+            bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
         }
     }
 
@@ -151,13 +167,13 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
             sSpiderControllerService.setActivityMessenger(mSpiderMessenger);
             sSpiderControllerService.send(SpiderInstruction.requestScriptList);
             sIsConnectedToService = true;
-            Log.d(TAG, "Bluetooth service is connected");
+            Log.d(TAG, "SpiderController service is connected");
         }
 
         @Override
         public void onServiceDisconnected(ComponentName arg0) {
             sIsConnectedToService = false;
-            Log.d(TAG, "Bluetooth service disconnected");
+            Log.d(TAG, "SpiderController disconnected");
         }
     };
 
@@ -173,7 +189,10 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
                 case READ_IMAGE:
                     //Log.d(TAG, "Trying to Set bitmap");
                     if(sImageView != null) {
-                        sImageView.setImageBitmap((Bitmap) msg.obj);
+                        byte[] decodedByteString = (byte[]) msg.obj;
+                        Bitmap bitmap = BitmapFactory.decodeByteArray(decodedByteString, 0, decodedByteString.length);
+                        if(bitmap != null)
+                            sImageView.setImageBitmap(bitmap);
                     }
                     break;
 
@@ -193,13 +212,13 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
         }
     }
 
-    private static int CAMERA_UPDATE_DELAY = 450;
+    private static int CAMERA_UPDATE_DELAY = 1000;
     private static Handler requestCameraImagesHandler = new Handler();
     private static Runnable requestCameraImagesRunnable = new Runnable() {
         @Override
         public void run() {
             if(sSpiderControllerService != null) {
-                sSpiderControllerService.send_requestCameraImage();
+                sSpiderControllerService.send(SpiderInstruction.requestCameraImage);
                 requestCameraImagesHandler.postDelayed(this, CAMERA_UPDATE_DELAY);
             }
         }
@@ -271,11 +290,11 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
         public CharSequence getPageTitle(int position) {
             Locale l = Locale.getDefault();
             switch (position) {
-                case 0:
+                case PAGE_ID_CONTROL:
                     return getString(R.string.title_section1).toUpperCase(l);
-                case 1:
+                case PAGE_ID_INFO:
                     return getString(R.string.title_section2).toUpperCase(l);
-                case 2:
+                case PAGE_ID_SCRIPTS:
                     return getString(R.string.title_section3).toUpperCase(l);
             }
             return null;
@@ -318,15 +337,15 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
             //
             View rootView = null;
             switch (sectionNumber) {
-                case 1:
+                case PAGE_ID_CONTROL + 1:
                     rootView = inflater.inflate(R.layout.fragment_main_control, container, false);
                     createTabFragment_Control(rootView);
                     break;
-                case 2:
+                case PAGE_ID_INFO + 1:
                     rootView = inflater.inflate(R.layout.fragment_main_leg_control, container, false);
                     createTabFragment_legControl(rootView);
                     break;
-                case 3:
+                case PAGE_ID_SCRIPTS + 1:
                     rootView = inflater.inflate(R.layout.fragment_main_scripts, container, false);
                     createTabFragment_scripts(rootView);
                     break;
@@ -355,25 +374,18 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
             @Override
             public void onClick(View view) {
 
-                if(view.getId() == R.id.leftArrowButton) {
-                    if(sIsConnectedToService)
-                        sSpiderControllerService.send(SpiderInstruction.moveLeft);
-                }
-                else if(view.getId() == R.id.rightArrowButton) {
-                    if(sIsConnectedToService)
-                        sSpiderControllerService.send(SpiderInstruction.moveRight);
-                }
-                else if(view.getId() == R.id.downArrowButton) {
-                    if(sIsConnectedToService)
-                        sSpiderControllerService.send(SpiderInstruction.moveBackwards);
-                }
-                else if(view.getId() == R.id.upArrowButton) {
-                    if(sIsConnectedToService)
-                        sSpiderControllerService.send(SpiderInstruction.moveForward);
-                }
-                else if(view.getId() == R.id.imageView) {
-                    if(sIsConnectedToService)
+                if(sIsConnectedToService) {
+                    if (view.getId() == R.id.leftArrowButton) {
+                        sSpiderControllerService.send(SpiderInstruction.move, "270");
+                    } else if (view.getId() == R.id.rightArrowButton) {
+                        sSpiderControllerService.send(SpiderInstruction.move, "90");
+                    } else if (view.getId() == R.id.downArrowButton) {
+                        sSpiderControllerService.send(SpiderInstruction.move, "180");
+                    } else if (view.getId() == R.id.upArrowButton) {
+                        sSpiderControllerService.send(SpiderInstruction.move, "0");
+                    } else if (view.getId() == R.id.imageView) {
                         setCameraEnabled(false);
+                    }
                 }
             }
         };
@@ -423,12 +435,13 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
         int id = item.getItemId();
         if (id == R.id.action_settings) {
             return true;
-        } else if( id == R.id.action_disconnect) {
+        }
+        else if( id == R.id.action_disconnect) {
             sSpiderControllerService.disconnect();
             startActivity(new Intent(MainActivity.this, ConnectActivity.class));
         }
+
         return super.onOptionsItemSelected(item);
     }
-
 }
 

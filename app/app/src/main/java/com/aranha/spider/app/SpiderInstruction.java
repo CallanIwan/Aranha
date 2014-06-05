@@ -5,7 +5,7 @@ package com.aranha.spider.app;
  */
 public enum SpiderInstruction {
     move {
-        public String toString() { return "move";  }
+        public String toString() { return "" + ((char) 4);  }
     },
     moveLeft {
         public String toString() { return "moveRight";  }
