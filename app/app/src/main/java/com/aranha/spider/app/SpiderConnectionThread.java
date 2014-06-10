@@ -20,7 +20,7 @@ import java.net.Socket;
  * Handles all the communication between the Raspberry Pi and the App.
  */
 public class SpiderConnectionThread extends Thread {
-    private static final String TAG = "BluetoothSpiderConnectionThread";
+    private static final String TAG = "SpiderConnectionThread";
 
     private final BluetoothSocket mBluetoothSocket;
     private final Socket mWifiSocket;
@@ -51,6 +51,7 @@ public class SpiderConnectionThread extends Thread {
         mmInStream = tmpIn;
         mmOutStream = tmpOut;
         onConnected();
+
     }
     public SpiderConnectionThread(Socket socket, Messenger messenger) {
         mMessenger = messenger;
@@ -66,10 +67,14 @@ public class SpiderConnectionThread extends Thread {
 
         mmInStream = tmpIn;
         mmOutStream = tmpOut;
+
         onConnected();
     }
 
+
+
     public void onConnected() {
+
         try {
             Message msg = new Message();
             msg.what = SpiderController.SpiderMessage.CONNECTED_TO_RASPBERRYPI.ordinal();
@@ -89,6 +94,9 @@ public class SpiderConnectionThread extends Thread {
     public static final int PACKET_ID_VISION_SCRIPTS = 3;
 
     public static int PACKET_SIZE = 1024;
+
+    boolean once = true;
+
     public void run() {
 
         byte[] buffer = new byte[PACKET_SIZE];  // buffer store for the stream
@@ -102,10 +110,23 @@ public class SpiderConnectionThread extends Thread {
                     bytes = mmInStream.read(buffer);
 
                     int messageType = buffer[0];
-                    int packetCount =  (int) buffer[1] & 0xff;;
+                    int packetSize;
 
-                    if(bytes == 2) {
-                        handleMessage(mmInStream, messageType, packetCount);
+                    for(int i = 0; i < bytes; i++) {
+                        if((buffer[i] & 0xff) == ((char) 0))  {
+
+                            try {
+                                packetSize = Integer.parseInt(new String(buffer, "UTF-8").substring(1, i));
+                                handleMessage(mmInStream, messageType, packetSize);
+                            } catch (NumberFormatException e) {
+                                Log.e(TAG, "NumberformatException");
+                            }
+                        }
+                    }
+
+                    if(once) {
+                        sendSpiderInstruction(SpiderInstruction.move);
+                        once=false;
                     }
 
                 } catch (IOException e) {
@@ -115,7 +136,7 @@ public class SpiderConnectionThread extends Thread {
                         mMessenger.send(Message.obtain(null, SpiderController.SpiderMessage.CONNECTION_CLOSED.ordinal(), 0, 0));
                     }
                     else { // Connection lost by some other circumstance.
-                        Log.e(TAG, "Connection lost to Raspberry Pi.");
+                        Log.e(TAG, "Connection lost to Raspberry Pi." + e.getMessage());
                         mMessenger.send(Message.obtain(null, SpiderController.SpiderMessage.CONNECTION_LOST.ordinal(), 0, 0));
                     }
                     break;
@@ -127,30 +148,29 @@ public class SpiderConnectionThread extends Thread {
         }
     }
 
-    public void handleMessage(InputStream mmInStream, int messageType, int packetCount) throws IOException, RemoteException {
+    public void handleMessage(InputStream mmInStream, int messageType, int packetSize) throws IOException, RemoteException {
         byte[] buffer = new byte[PACKET_SIZE];
         int bytes;
 
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(4096);
 
-        Log.d(TAG, "Receiving a message: " + messageType + " - packets: " + packetCount);
-        for(int i = 0; i < packetCount; i++) {
+        Log.d(TAG, "Receiving a message: " + messageType + " - Packetsize: " + packetSize);
+
+        while(byteArrayOutputStream.size() < packetSize) {
             bytes = mmInStream.read(buffer);
             byteArrayOutputStream.write(buffer, 0, bytes);
-           // Log.d(TAG, " ?? " + byteArrayOutputStream.size() + " " + bytes + " - " + new String(buffer, "UTF-8").substring(0, bytes));
+            //Log.d(TAG, " ?? " + byteArrayOutputStream.size() + " " + bytes + " - " + new String(buffer, "UTF-8").substring(0, bytes));
         }
 
         try {
             byte[] decodedByteString = Base64.decode(byteArrayOutputStream.toByteArray(), Base64.NO_PADDING);
-            String decodedString = new String(decodedByteString);
 
             switch (messageType) {
                 case PACKET_ID_IMAGE:
-                    Bitmap bitmap = BitmapFactory.decodeByteArray(decodedByteString, 0, decodedByteString.length);
-                    mMessenger.send(Message.obtain(null, SpiderController.SpiderMessage.READ_IMAGE.ordinal(), bitmap));
+                    mMessenger.send(Message.obtain(null, SpiderController.SpiderMessage.READ_IMAGE.ordinal(), decodedByteString));
                     break;
                 case PACKET_ID_VISION_SCRIPTS:
-                    String[] scriptList = decodedString.split(";");
+                    String[] scriptList = new String(decodedByteString).split(";");
                     mMessenger.send(Message.obtain(null, SpiderController.SpiderMessage.READ_SCRIPT_LIST.ordinal(), scriptList));
                     break;
                 case PACKET_ID_SENSOR:
@@ -168,12 +188,29 @@ public class SpiderConnectionThread extends Thread {
      * Send an instruction to the spider
      * @param instruction The instruction to send.
      */
+    public void sendSpiderInstruction(SpiderInstruction instruction, String extraData) {
+
+        Log.d(TAG, "Sending instruction: " + instruction.toString());
+        String finalString;
+        if(extraData.length() == 0)
+            finalString = instruction.toString();
+        else
+            finalString = instruction + ";" + extraData;
+
+        write(Base64.encode(finalString.getBytes(), Base64.DEFAULT));
+    }
     public void sendSpiderInstruction(SpiderInstruction instruction) {
+        //Log.d(TAG, "Sending instruction: " + instruction.toString().getBytes());
+
+        android.os.Process.getThreadPriority(android.os.Process.myTid());
+        int callingThread = android.os.Process.myTid();
+        System.out.println(" ZWEETBALLEN: " + callingThread);
+
         write(Base64.encode(instruction.toString().getBytes(), Base64.DEFAULT));
     }
 
     /**
-     * Called from the main activity to send a string encoded with Base64.
+     * Send a string encoded with Base64.
      * @param input string
      */
     public void writeBase64(String input) {
