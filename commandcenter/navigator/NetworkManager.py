@@ -2,6 +2,9 @@ import json
 import socket
 
 #little helper class for deserializing json
+import time
+
+
 class StateClass(object):
     pos = None
     rot = None
@@ -13,6 +16,15 @@ class StateClass(object):
 
 #needed its own class so that it can be passed around at the oilfinder statemachine
 class NetworkManager(object):
+    # header bytes, intended for the app to know what to receive
+    H_IMAGE = "" + chr(1)
+    H_SENSOR = "" + chr(2)
+    H_VISION = "" + chr(3)
+    H_MOV = "" + chr(4)
+    H_MODE = "" + chr(5)
+
+    H_CARDS = "" + chr(10)
+
     def __init__(self, ip):
         if ip != None:
             self.socket = self.connectToStream(ip, 9999)
@@ -28,27 +40,47 @@ class NetworkManager(object):
     #internal use, converts the deserialized hashmap to actual object
     def stateDecoder(self, obj):
         s = obj["sensors"]
-        newObj = StateClass(s["ultrasone"]["value"], s["rotation"]["value"], s["position"]["value"])
+        newObj = StateClass( s["position"]["value"], s["rotation"]["value"], s["ultrasone"]["value"])
 
         return newObj
 
     #check if there is data to be collected, presumed to be state
-    def fetchState(self):
+    def fetchState(self, block=False):
         if self.socket != None:
-            response = self.socket.recv(1024)
+            response = None
+
+            self.sendCommand(self.H_SENSOR)
+
+            #todo make more robust
+            if block == True:
+                while response == None:
+                    time.sleep(0.2)
+                    response = self.socket.recv(1024)
+            else:
+                response = self.socket.recv(1024)
+
             #print the json we received
             print "Received: {}".format(response)
             if response:
-                return self.stateDecoder(json.loads(response))
-
-        return None
+                try:
+                    return self.stateDecoder(json.loads(response))
+                except ValueError:
+                    return None
 
     #todo: implement this at driver, hardcoded locally for the time being
     def fetchMode(self):
-        #todo implement
-        return 'balloon'
+        self.sendCommand(self.H_MODE)
+        #return 'card'
 
-    #sends plain strings
+    #sends plain strings, probably want to use the command implementations, eg, forward/rotate
     def sendCommand(self, cmd):
         if self.socket != None:
             self.socket.sendall(cmd)
+
+
+    #constantly spam these commands to emulate a controller
+    def forward(self):
+        self.sendCommand(self.H_MOV + ";0")
+
+    def rotate(self, deg):
+        self.sendCommand(self.H_MOV + ";" + `deg`)
