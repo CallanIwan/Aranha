@@ -49,8 +49,6 @@ int main(int argc, const char* argv[])
 	spider.SetLeg(0, leg1);
 	spider.Print();
 
-	spider.GetSpiController()->Enable();
-
 	printf("Testing matrix modifications\n");
 
 	Vector3 forward = Vector3::Forward();

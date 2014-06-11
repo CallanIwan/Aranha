@@ -1,7 +1,5 @@
 #include <bcm2835.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
 
 #include "SpiController.h"
 #include "LegConfig.h"
@@ -16,20 +14,7 @@
 
 SpiController::SpiController()
 {
-	if (!bcm2835_init())
-	{
-		printf(TERM_RESET TERM_BOLD TERM_RED"SpiController> ERROR: PERMISSION DENIED TO SPI DRIVER\n");
-		exit(EXIT_FAILURE);
-	}
-}
-
-SpiController::~SpiController()
-{
-}
-
-void SpiController::Enable()
-{
-	printf(TERM_RESET TERM_BOLD TERM_GREEN "SpiController>" TERM_RESET " INITIALIZING SPI");
+	bcm2835_init();
 	bcm2835_spi_begin();
 	//Using default spi settings
 	bcm2835_spi_setBitOrder(BCM2835_SPI_BIT_ORDER_MSBFIRST);
@@ -38,11 +23,14 @@ void SpiController::Enable()
 	bcm2835_spi_chipSelect(BCM2835_SPI_CS0);
 	bcm2835_spi_setChipSelectPolarity(BCM2835_SPI_CS0, LOW);
 }
-void SpiController::Disable()
+
+
+SpiController::~SpiController()
 {
 	bcm2835_spi_end();
 	bcm2835_close();
 }
+
 void SpiController::Update()
 {
 
@@ -69,7 +57,7 @@ void autoComplete(uint8_t trigger)
 		}
 		while (true)
 		{
-			received = bcm2835_spi_transfer(msg);
+			received = 0;// bcm2835_spi_transfer(msg);
 			if (received == COMMAND_EOS || receivedcount >= _BUFSIZE) break;
 			if (msg == COMMAND_PROGRESS)
 			{
@@ -92,7 +80,6 @@ void autoComplete(uint8_t trigger)
 			}
 			if (receivedbuffer[i] == 25)
 			{
-				printf(TERM_RESET TERM_BOLD TERM_GREEN "SpiController>" TERM_RESET " Read failed results\n");
 				break;
 			}
 		}
@@ -102,12 +89,8 @@ void autoComplete(uint8_t trigger)
 void SpiController::SetAngle(int motor, int byteAngle, int speed, bool sync)
 {
 	printf(TERM_RESET TERM_BOLD TERM_GREEN "SpiController>" TERM_RESET " Embedded command motor%i to %i @%i\n", motor, byteAngle, speed);
-	char buffer[5] = { COMMAND_START, motor, byteAngle, speed, COMMAND_ANGLE };
-	for (int i = 0; i < 5; i++)
-	{
-		printf(" %02X",buffer[i]);
-	}
-	bcm2835_spi_writenb(buffer, 5);
+	char buffer[5] = { COMMAND_START, (char)motor, (char)byteAngle, (char) speed, COMMAND_ANGLE };
+	//bcm2835_spi_writenb(buffer, 5);
 	if (sync)
 	{
 		printf(TERM_RESET TERM_BOLD TERM_GREEN "SpiController>" TERM_RESET " Synchronizing... ");
