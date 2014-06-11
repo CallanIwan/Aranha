@@ -2,4 +2,4 @@
 
 ILegCommand::ILegCommand() { }
 ILegCommand::~ILegCommand() { }
-void ILegCommand::execute(Spider& spider) { }
+void ILegCommand::Execute(Spider& spider) { }

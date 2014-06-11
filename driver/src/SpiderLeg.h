@@ -9,9 +9,11 @@
 class SpiderLeg
 {
 private:
-	//The matrix that specifies the position of the origin of the leg in the world, and its rotation(usually only Yaxis rotation)
+	//The matrix that is able to manipulate global vectors into vectors relative to the
 	Matrix modifier;
-	LegConfig configuration;
+	//The matrix that globalizes
+	Matrix modifier_inv;
+	LegConfig config;
 	Spider* master;
 public:
 	//DO NOT USE THIS CONSTRUCTOR
@@ -24,21 +26,25 @@ public:
 	This method sets the angels of the leg to match the specified angles
 	When activating synchronized mode, the method will wait until the microcontroller has completed the PWM transition
 	*/
-	void setAngles(float body, float leg, float toe, bool sync);
+	void SetAngles(float body, float leg, float toe, bool sync);
 	/**
 	Sets the angles of the leg bones so the toe touches the given vector,
 	vector is relative to the leg, use SpiderLeg::Localize to transform a
 	vector relative to the spiders center to the context of the spiders leg
 	*/
-	void setAngles(Vector3 position, bool sync);
+	void SetAngles(Vector3 position, bool sync);
 	/**
 	Transforms a vector from the context of the spider to the individual leg
 	*/
-	Vector3 localize(Vector3 worldVector);
+	Vector3 Localize(Vector3 worldVector);
 	/**
 	Transforms a vector from the context of a spider leg to the (global) context of the spider
 	*/
-	Vector3 globalize(Vector3 localVector);
+	Vector3 Globalize(Vector3 localVector);
+	/**
+	Print information about the instance to the console
+	*/
+	void Print();
 };
 
 #endif

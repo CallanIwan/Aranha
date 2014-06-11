@@ -10,7 +10,7 @@ SpiderMoveCommand::~SpiderMoveCommand()
 {
 }
 
-void SpiderMoveCommand::execute(Spider& spider)
+void SpiderMoveCommand::Execute(Spider& spider)
 {
 
 }

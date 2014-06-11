@@ -16,13 +16,13 @@ public:
 	SyncLock();
 	~SyncLock();
 	//Increase the lock of a syncgroup by 1
-	virtual void lock(int lockID);
+	virtual void Lock(int lockID);
 	//Decrease the lock of a syncgroup by 1
-	virtual void unlock(int lockID);
+	virtual void Unlock(int lockID);
 	//Get the locklevel of a syncgroup
-	virtual int getLockLevel(int lockID);
+	virtual int GetLockLevel(int lockID);
 	//Block until the locklevel of a syncgroup 0 is
-	virtual void waitForUnlock(int lockID);
+	virtual void WaitForUnlock(int lockID);
 };
 
 #endif

@@ -12,10 +12,10 @@ Matrix::Matrix()
 	this->M41 = 0; this->M42 = 0; this->M43 = 0; this->M44 = 1;
 }
 
-Matrix::Matrix(double m1, double m2, double m3, double m4,
-	double m5, double m6, double m7, double m8,
-	double m9, double m10, double m11, double m12,
-	double m13, double m14, double m15, double m16)
+Matrix::Matrix(float m1, float m2, float m3, float m4,
+	float m5, float m6, float m7, float m8,
+	float m9, float m10, float m11, float m12,
+	float m13, float m14, float m15, float m16)
 {
 	this->M11 = m1; this->M12 = m2; this->M13 = m3; this->M14 = m4;
 	this->M21 = m5; this->M22 = m6; this->M23 = m7; this->M24 = m8;
@@ -25,10 +25,10 @@ Matrix::Matrix(double m1, double m2, double m3, double m4,
 
 Matrix::~Matrix()
 {
-	// TODO
+	
 }
 
-void Matrix::print()
+void Matrix::Print()
 {
 	std::cout << M11 << "," << M12 << "," << M13 << "," << M14 << std::endl;
 	std::cout << M21 << "," << M22 << "," << M23 << "," << M24 << std::endl;
@@ -36,7 +36,7 @@ void Matrix::print()
 	std::cout << M41 << "," << M42 << "," << M43 << "," << M44 << std::endl;
 }
 
-Matrix Matrix::operator* (double scaleFactor)
+Matrix Matrix::operator* (float scaleFactor)
 {
 	Matrix result;
 	result.M11 = this->M11 * scaleFactor;
@@ -56,6 +56,11 @@ Matrix Matrix::operator* (double scaleFactor)
 	result.M43 = this->M43 * scaleFactor;
 	result.M44 = this->M44 * scaleFactor;
 	return result;
+}
+Matrix Matrix::operator*=(float scaleFactor)
+{
+	*this = (*this) * scaleFactor;
+	return *this;
 }
 
 Matrix Matrix::operator* (Matrix const& mat)
@@ -82,27 +87,11 @@ Matrix Matrix::operator* (Matrix const& mat)
 
 Matrix Matrix::operator*=(Matrix const& mat)
 {
-	M11 = M11 * mat.M11 + M12 * mat.M21 + M13 * mat.M31 + M14 * mat.M41;
-	M12 = M11 * mat.M12 + M12 * mat.M22 + M13 * mat.M32 + M14 * mat.M42;
-	M13 = M11 * mat.M13 + M12 * mat.M23 + M13 * mat.M33 + M14 * mat.M43;
-	M14 = M11 * mat.M14 + M12 * mat.M24 + M13 * mat.M34 + M14 * mat.M44;
-	M21 = M21 * mat.M11 + M22 * mat.M21 + M23 * mat.M31 + M24 * mat.M41;
-	M22 = M21 * mat.M12 + M22 * mat.M22 + M23 * mat.M32 + M24 * mat.M42;
-	M23 = M21 * mat.M13 + M22 * mat.M23 + M23 * mat.M33 + M24 * mat.M43;
-	M24 = M21 * mat.M14 + M22 * mat.M24 + M23 * mat.M34 + M24 * mat.M44;
-	M31 = M31 * mat.M11 + M32 * mat.M21 + M33 * mat.M31 + M34 * mat.M41;
-	M32 = M31 * mat.M12 + M32 * mat.M22 + M33 * mat.M32 + M34 * mat.M42;
-	M33 = M31 * mat.M13 + M32 * mat.M23 + M33 * mat.M33 + M34 * mat.M43;
-	M34 = M31 * mat.M14 + M32 * mat.M24 + M33 * mat.M34 + M34 * mat.M44;
-	M41 = M41 * mat.M11 + M42 * mat.M21 + M43 * mat.M31 + M44 * mat.M41;
-	M42 = M41 * mat.M12 + M42 * mat.M22 + M43 * mat.M32 + M44 * mat.M42;
-	M43 = M41 * mat.M13 + M42 * mat.M23 + M43 * mat.M33 + M44 * mat.M43;
-	M44 = M41 * mat.M14 + M42 * mat.M24 + M43 * mat.M34 + M44 * mat.M44;
+	*this = (*this) * mat;
 	return *this;
 }
 
-
-Matrix Matrix::CreateTranslation(double _x, double _y, double _z)
+Matrix Matrix::CreateTranslation(float _x, float _y, float _z)
 {
 	Matrix result;
 	result.M11 = 1;
@@ -129,7 +118,7 @@ Matrix Matrix::CreateTranslation(Vector3 vec)
 	return Matrix::CreateTranslation(vec.x, vec.y, vec.z);
 }
 
-Matrix Matrix::CreateScale(double _x, double _y, double _z)
+Matrix Matrix::CreateScale(float _x, float _y, float _z)
 {
 	Matrix result;
 	result.M11 = _x;
@@ -151,15 +140,15 @@ Matrix Matrix::CreateScale(double _x, double _y, double _z)
 	return result;
 }
 
-Matrix Matrix::CreateScale(double scale)
+Matrix Matrix::CreateScale(float scale)
 {
 	return Matrix::CreateScale(scale, scale, scale);
 }
 
-Matrix Matrix::CreateRotationX(double radians)
+Matrix Matrix::CreateRotationX(float radians)
 {
-	double num = cos(radians);
-	double num2 = sin(radians);
+	float num = cos(radians);
+	float num2 = sin(radians);
 	Matrix result;
 	result.M11 = 1;
 	result.M12 = 0;
@@ -180,10 +169,10 @@ Matrix Matrix::CreateRotationX(double radians)
 	return result;
 }
 
-Matrix Matrix::CreateRotationY(double radians)
+Matrix Matrix::CreateRotationY(float radians)
 {
-	double num = cos(radians);
-	double num2 = sin(radians);
+	float num = cos(radians);
+	float num2 = sin(radians);
 	Matrix result;
 	result.M11 = num;
 	result.M12 = 0;
@@ -204,10 +193,10 @@ Matrix Matrix::CreateRotationY(double radians)
 	return result;
 }
 
-Matrix Matrix::CreateRotationZ(double radians)
+Matrix Matrix::CreateRotationZ(float radians)
 {
-	double num = cos(radians);
-	double num2 = sin(radians);
+	float num = cos(radians);
+	float num2 = sin(radians);
 	Matrix result;
 	result.M11 = num;
 	result.M12 = num2;
@@ -228,35 +217,77 @@ Matrix Matrix::CreateRotationZ(double radians)
 	return result;
 }
 
-Matrix Matrix::Translate(double _x, double _y, double _z)
+/**
+Modifies the matrix with a translation matrix
+*/
+Matrix Matrix::Translate(float _x, float _y, float _z)
 {
 	M41 += _x;
 	M42 += _y;
 	M43 += _z;
 	return *this;
 }
-
+/**
+Modifies the matrix with a translation matrix
+*/
 Matrix Matrix::Translate(Vector3 vec)
 {
-	return Translate(vec.x, vec.y, vec.z);
+	*this *= Matrix::CreateTranslation(vec);
+	return *this;
 }
-
-Matrix Matrix::Scale(double _x, double _y, double _z)
+/**
+Modifies the matrix with a scaling matrix
+*/
+Matrix Matrix::Scale(float _x, float _y, float _z)
 {
 	*this *= Matrix::CreateScale(_x, _y, _z);
 	return *this;
 }
-
-Matrix Matrix::Scale(double scale)
-{
-	return Scale(scale, scale, scale);
-}
-
-Matrix Matrix::Rotate(double _x, double _y, double _z)
+/**
+Modifies the matrix with a rotation matrix
+*/
+Matrix Matrix::Rotate(float _x, float _y, float _z)
 {
 	Matrix rotX = Matrix::CreateRotationX(_x);
 	Matrix rotY = Matrix::CreateRotationY(_y);
 	Matrix rotZ = Matrix::CreateRotationZ(_z);
 	*this *= rotX * rotY * rotZ;
 	return *this;
+}
+/**
+Returns the inverse version of this matrix.
+*/
+Matrix Matrix::Inverse()
+{
+	Matrix result;
+	//Source: http://www.euclideanspace.com/maths/algebra/matrix/functions/inverse/fourD/index.htm
+	result.M11 = M23*M34*M42 - M24*M33*M42 + M24*M32*M43 - M22*M34*M43 - M23*M32*M44 + M22*M33*M44;
+	result.M12 = M14*M33*M42 - M13*M34*M42 - M14*M32*M43 + M12*M34*M43 + M13*M32*M44 - M12*M33*M44;
+	result.M13 = M13*M24*M42 - M14*M23*M42 + M14*M22*M43 - M12*M24*M43 - M13*M22*M44 + M12*M23*M44;
+	result.M14 = M14*M23*M32 - M13*M24*M32 - M14*M22*M33 + M12*M24*M33 + M13*M22*M34 - M12*M23*M34;
+	result.M21 = M24*M33*M41 - M23*M34*M41 - M24*M31*M43 + M21*M34*M43 + M23*M31*M44 - M21*M33*M44;
+	result.M22 = M13*M34*M41 - M14*M33*M41 + M14*M31*M43 - M11*M34*M43 - M13*M31*M44 + M11*M33*M44;
+	result.M23 = M14*M23*M41 - M13*M24*M41 - M14*M21*M43 + M11*M24*M43 + M13*M21*M44 - M11*M23*M44;
+	result.M24 = M13*M24*M31 - M14*M23*M31 + M14*M21*M33 - M11*M24*M33 - M13*M21*M34 + M11*M23*M34;
+	result.M31 = M22*M34*M41 - M24*M32*M41 + M24*M31*M42 - M21*M34*M42 - M22*M31*M44 + M21*M32*M44;
+	result.M32 = M14*M32*M41 - M12*M34*M41 - M14*M31*M42 + M11*M34*M42 + M12*M31*M44 - M11*M32*M44;
+	result.M33 = M12*M24*M41 - M14*M22*M41 + M14*M21*M42 - M11*M24*M42 - M12*M21*M44 + M11*M22*M44;
+	result.M34 = M14*M22*M31 - M12*M24*M31 - M14*M21*M32 + M11*M24*M32 + M12*M21*M34 - M11*M22*M34;
+	result.M41 = M23*M32*M41 - M22*M33*M41 - M23*M31*M42 + M21*M33*M42 + M22*M31*M43 - M21*M32*M43;
+	result.M42 = M12*M33*M41 - M13*M32*M41 + M13*M31*M42 - M11*M33*M42 - M12*M31*M43 + M11*M32*M43;
+	result.M43 = M13*M22*M41 - M12*M23*M41 - M13*M21*M42 + M11*M23*M42 + M12*M21*M43 - M11*M22*M43;
+	result.M44 = M12*M23*M31 - M13*M22*M31 + M13*M21*M32 - M11*M23*M32 - M12*M21*M33 + M11*M22*M33;
+	result *= 1 / this->Determinant();
+	return result;
+}
+
+float Matrix::Determinant()
+{
+	return
+		M14*M23*M32*M41 - M13*M24*M32*M41 - M14*M22*M33*M41 + M12*M24*M33*M41 +
+		M13*M22*M34*M41 - M12*M23*M34*M41 - M14*M23*M31*M42 + M13*M24*M31*M42 +
+		M14*M21*M33*M42 - M11*M24*M33*M42 - M13*M21*M34*M42 + M11*M23*M34*M42 +
+		M14*M22*M31*M43 - M12*M24*M31*M43 - M14*M21*M32*M43 + M11*M24*M32*M43 +
+		M12*M21*M34*M43 - M11*M22*M34*M43 - M13*M22*M31*M44 + M12*M23*M31*M44 +
+		M13*M21*M32*M44 - M11*M23*M32*M44 - M12*M21*M33*M44 + M11*M22*M33*M44;
 }
