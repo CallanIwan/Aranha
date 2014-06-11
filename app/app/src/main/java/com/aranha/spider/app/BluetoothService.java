@@ -36,7 +36,8 @@ public class BluetoothService extends SpiderControllerService {
         // Register bluetooth device-discovery.
         IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
         registerReceiver(mBluetoothReceiver, filter); // Don't forget to unregister in onDestroy()
-        Log.d(TAG,"Bluetooth receiver registered");
+
+        Log.d(TAG,"Bluetooth receiver registered Bonded devices: " + mBluetoothAdapter.getBondedDevices().size());
 
         discoveredDevicesAdapter = new BluetoothDeviceAdapter(this);
     }
@@ -174,29 +175,13 @@ public class BluetoothService extends SpiderControllerService {
     }
 
     @Override
-    public void send_getSpiderInfo() {
-
-    }
-
-    @Override
-    public void send_requestCameraImage() {
-        if(mSpiderConnectionThread != null)
-            mSpiderConnectionThread.sendSpiderInstruction(SpiderInstruction.requestCameraImage);
-    }
-
-    @Override
     public void send(SpiderInstruction instruction) {
         if(mSpiderConnectionThread != null)
             mSpiderConnectionThread.sendSpiderInstruction(instruction);
     }
-
     @Override
-    public void send_move(int direction) {
-
-    }
-
-    @Override
-    public void send_executeScript(int scriptIndex) {
-
+    public void send(SpiderInstruction instruction, String extraData) {
+        if(mSpiderConnectionThread != null)
+            mSpiderConnectionThread.sendSpiderInstruction(instruction, extraData);
     }
 }

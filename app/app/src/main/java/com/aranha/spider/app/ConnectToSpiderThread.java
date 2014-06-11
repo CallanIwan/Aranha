@@ -9,6 +9,7 @@ import android.util.Log;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.sql.SQLOutput;
 import java.util.UUID;
 
 /**
@@ -16,7 +17,7 @@ import java.util.UUID;
  * If successful it will start another thread which handles all the messages.
  */
 public class ConnectToSpiderThread extends Thread {
-    private static final String TAG = "BluetoothThread";
+    private static final String TAG = "ConnectToSpiderThread";
 
     private final Messenger mMessenger;
 
@@ -27,11 +28,22 @@ public class ConnectToSpiderThread extends Thread {
     private String mHostName;
     private int mPort;
 
+    /**
+     * Used to connect with bluetooth
+     * @param device a BluetoothDevice
+     * @param messenger to send messages back to the service.
+     */
     public ConnectToSpiderThread(BluetoothDevice device, Messenger messenger) {
         mMessenger = messenger;
         mBluetoothDevice = device;
     }
 
+    /**
+     * Constructor to connect via wifi
+     * @param hostName the IP address
+     * @param port the port.
+     * @param messenger to send messages back to the service.
+     */
     public ConnectToSpiderThread(String hostName, int port, Messenger messenger) {
         mMessenger = messenger;
         mHostName = hostName;
@@ -42,34 +54,24 @@ public class ConnectToSpiderThread extends Thread {
     public void run() {
 
         try {
-
             if(mBluetoothDevice != null) {
                 // Get a BluetoothSocket to connect with the given BluetoothDevice
-                try {
-                    mBluetoothSocket = mBluetoothDevice.createRfcommSocketToServiceRecord(UUID.fromString("9d7debbc-c85d-11d1-9eb4-006008c3a19a"));
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-
+                mBluetoothSocket = mBluetoothDevice.createRfcommSocketToServiceRecord(
+                        UUID.fromString("9d7debbc-c85d-11d1-9eb4-006008c3a19a"));
                 mBluetoothSocket.connect();
                 Thread spiderConnectionThread = new SpiderConnectionThread(mBluetoothSocket, mMessenger);
                 spiderConnectionThread.start();
             }
             else if(mHostName != null) {
-                try {
-                    mWifiSocket = new Socket(mHostName, mPort);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+
+                mWifiSocket = new Socket(mHostName, mPort);
                 Thread spiderConnectionThread = new SpiderConnectionThread(mWifiSocket, mMessenger);
                 spiderConnectionThread.start();
             }
-            // Do work to manage the connection (in a separate thread)
-            System.out.println("Starting spin connection thread.");
 
         } catch (IOException closeException) {
 
-            Log.d(TAG, "!!! Unable to connect to socket." + closeException.getMessage());
+            Log.d(TAG, "Unable to connect to socket." + closeException.getMessage());
             try {
                 mMessenger.send(Message.obtain(null, SpiderController.SpiderMessage.CONNECTING_FAILED.ordinal()));
             } catch (RemoteException e) {

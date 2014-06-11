@@ -10,7 +10,7 @@ class World(object):
 
     def __init__(self, tileSize = 1):
         self.tileSize = tileSize
-        self.grid = Grid(100)
+        self.grid = Grid(1000)
 
     def applyRay(self, ray):
         passableTiles = ray.getPassableTiles(self.tileSize)
@@ -19,5 +19,9 @@ class World(object):
         self.rays.append(ray)
         self.grid.setTiles(passableTiles, self.grid.PASSABLE)
         self.grid.setTile(endTile, self.grid.IMPASSABLE)
+
+
+    def nearestUnexplored(self, pos, connected=1):
+        return self.grid.nearestUnexplored(pos, connected)
 
 
