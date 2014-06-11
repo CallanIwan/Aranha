@@ -11,6 +11,10 @@ private:
 public:
 	SpiController();
 	~SpiController();
+	//Enables the SPI
+	void Enable();
+	//Closes the SPI
+	void Disable();
 	//Updates the cache of the class, and sends angle changes
 	void Update();
 	//Set the angle of a motor, changes will apply at the next Update() call
