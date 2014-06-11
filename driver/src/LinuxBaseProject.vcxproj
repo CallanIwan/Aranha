@@ -39,7 +39,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>D:\Visual Studio Projects\LinuxBaseProject\LinuxHeaders_;$(IncludePath)</IncludePath>
+    <IncludePath>D:\Visual Studio Projects\LinuxBaseProject\LinuxHeaders;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
