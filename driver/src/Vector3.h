@@ -6,24 +6,24 @@
 class Vector3
 {
 public:
-	double x, y, z;
+	float x, y, z;
 	Vector3();
-	Vector3(double, double, double);
+	Vector3(float, float, float);
 	~Vector3();
 
-	double length();
+	float Length();
 
-	static Vector3 zero();
-	static Vector3 one();
-	static Vector3 unitX();
-	static Vector3 unitY();
-	static Vector3 unitZ();
-	static Vector3 forward();
-	static Vector3 backward();
-	static Vector3 left();
-	static Vector3 right();
-	static Vector3 up();
-	static Vector3 down();
+	static Vector3 Zero();
+	static Vector3 One();
+	static Vector3 UnitX();
+	static Vector3 UnitY();
+	static Vector3 UnitZ();
+	static Vector3 Forward();
+	static Vector3 Backward();
+	static Vector3 Left();
+	static Vector3 Right();
+	static Vector3 Up();
+	static Vector3 Down();
 
 	bool operator== (Vector3& vec);
 	//
@@ -31,16 +31,22 @@ public:
 	Vector3 operator- (Vector3 const& vec);
 	Vector3 operator* (Vector3 const& vec);
 	Vector3 operator/ (Vector3 const& vec);
+	Vector3 operator+=(Vector3 const& vec);
+	Vector3 operator-=(Vector3 const& vec);
+	Vector3 operator*=(Vector3 const& vec);
+	Vector3 operator/=(Vector3 const& vec);
 
-	Vector3 operator* (double const& vec);
-	Vector3 operator/ (double const& vec);
+	Vector3 operator* (float const& vec);
+	Vector3 operator/ (float const& vec);
+	Vector3 operator*=(float const& vec);
+	Vector3 operator/=(float const& vec);
 
-	static Vector3 transform(Vector3, Matrix);
-	void transform(Matrix);
+	static Vector3 Transform(Vector3, Matrix);
+	static Vector3 Clamp(Vector3);
+	void Transform(Matrix);
 
-	void print();
+	void Print();
 };
-Vector3 operator*(double const&, Vector3 const&);
-Vector3 operator/(double const&, Vector3 const&);
+Vector3 operator*(float const&, Vector3 const&);
 
 #endif

@@ -2,4 +2,4 @@
 
 ISpiderCommand::ISpiderCommand() { }
 ISpiderCommand::~ISpiderCommand() { }
-void ISpiderCommand::execute(Spider&) { }
+void ISpiderCommand::Execute(Spider&) { }
