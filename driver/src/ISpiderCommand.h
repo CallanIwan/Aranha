@@ -16,7 +16,7 @@ public:
 	Method that has to be implemented by subclasses
 	*/
 	~ISpiderCommand();
-	virtual void Execute(Spider& spider);
+	virtual void execute(Spider& spider);
 };
 
 #endif

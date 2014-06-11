@@ -12,13 +12,13 @@ SyncLock::~SyncLock()
 	
 }
 
-void SyncLock::Lock(int lockID)
+void SyncLock::lock(int lockID)
 {
 	if (lockID < 0 || lockID >= SYNCLOCK_CAPACITY)
 		return;
 	syncLocks[lockID]++;
 }
-void SyncLock::Unlock(int lockID)
+void SyncLock::unlock(int lockID)
 {
 	if (lockID < 0 || lockID >= SYNCLOCK_CAPACITY)
 		return;
@@ -32,14 +32,14 @@ void SyncLock::Unlock(int lockID)
 	}
 
 }
-int SyncLock::GetLockLevel(int lockID)
+int SyncLock::getLockLevel(int lockID)
 {
 	if (lockID < 0 || lockID >= SYNCLOCK_CAPACITY)
 		return SYNCLOCK_ERROR;
 	return syncLocks[lockID];
 
 }
-void SyncLock::WaitForUnlock(int lockID)
+void SyncLock::waitForUnlock(int lockID)
 {
 	if (lockID < 0 || lockID >= SYNCLOCK_CAPACITY)
 		return;

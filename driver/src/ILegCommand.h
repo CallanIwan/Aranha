@@ -14,7 +14,7 @@ protected:
 	ILegCommand();
 public:
 	~ILegCommand();
-	virtual void Execute(Spider& spider);
+	virtual void execute(Spider& spider);
 };
 
 #endif

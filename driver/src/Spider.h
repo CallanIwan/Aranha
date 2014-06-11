@@ -21,18 +21,15 @@ public:
 	~Spider();
 
 	//Set a leg of the spider, returns true when succesfull, false when the index is out of range
-	bool SetLeg(int index, SpiderLeg newLeg);
+	bool setLeg(int index, SpiderLeg newLeg);
 	//Gets a leg of the spider, returns null when the index is out of range, or the leg is not set
-	SpiderLeg* GetLeg(int index);
+	SpiderLeg* getLeg(int index);
 	//Adds a command to the queue of the spider
-	void QueueCommand(ISpiderCommand command);
+	void queueCommand(ISpiderCommand command);
 	//This method implements the AI of the spider, this should be run in an infinite loop
-	void Think();
+	void think();
 
-	SpiController* GetSpiController();
-
-	//Print all information to console, for debugging
-	void Print();
+	SpiController getSpiController();
 };
 
 #endif

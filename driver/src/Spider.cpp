@@ -2,12 +2,10 @@
 
 #include <queue>
 #include <vector>
-#include <stdio.h>
 
 #include "SpiderLeg.h"
 #include "ISpiderCommand.h"
 #include "SpiController.h"
-#include "Vector3.h"
 
 Spider::Spider()
 {
@@ -21,7 +19,8 @@ Spider::~Spider()
 {
 
 }
-bool Spider::SetLeg(int index, SpiderLeg newLeg)
+
+bool Spider::setLeg(int index, SpiderLeg newLeg)
 {
 	if (index < 0 || index >= GLOBAL_LEG_COUNT)
 	{
@@ -31,7 +30,7 @@ bool Spider::SetLeg(int index, SpiderLeg newLeg)
 	return true;
 }
 
-SpiderLeg* Spider::GetLeg(int index)
+SpiderLeg* Spider::getLeg(int index)
 {
 	if (index < 0 || index >= GLOBAL_LEG_COUNT)
 	{
@@ -40,7 +39,7 @@ SpiderLeg* Spider::GetLeg(int index)
 	return &(legs[index]);
 }
 
-void Spider::Think()
+void Spider::think()
 {
 	//Update SPI targets
 	//Update SPI progress
@@ -48,28 +47,12 @@ void Spider::Think()
 	//if command is done, then load next command
 }
 
-void Spider::Print()
-{
-	printf("Spider object debug report\n");
-	printf("Memory size: %i bytes\n",sizeof(*this));
-	for (int i = 0; i < GLOBAL_LEG_COUNT; i++)
-	{
-		SpiderLeg* leg = GetLeg(i);
-		printf("Leg: %i [%p]\n", i,leg);
-		printf("    Memory size: %i bytes\n",sizeof(*leg));
-		Vector3 local = leg->Localize(Vector3::One());
-		printf("    Matrix::One (localize)\t{%8.2f,%8.2f,%8.2f}\n", local.x, local.y, local.z);
-		Vector3 global = leg->Globalize(Vector3::One());
-		printf("    Matrix::One (globalize)\t{%8.2f,%8.2f,%8.2f}\n", global.x, global.y, global.z);
-	}
-}
-
-void Spider::QueueCommand(ISpiderCommand command)
+void Spider::queueCommand(ISpiderCommand command)
 {
 	commandQueue.push(command);
 }
 
-SpiController* Spider::GetSpiController()
+SpiController Spider::getSpiController()
 {
-	return &spiController;
+	return spiController;
 }

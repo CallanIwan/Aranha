@@ -14,7 +14,7 @@ private:
 public:
 	SpiderMoveCommand();
 	~SpiderMoveCommand();
-	void Execute(Spider& spider);
+	void execute(Spider& spider);
 };
 
 #endif
