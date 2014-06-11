@@ -5,12 +5,12 @@ Receives and sends data from/to paired client.
 PS3 controller: receive only
 Android App: receive/send
 """
-
-import time
 import base64
 from threading import Thread
 from bluetooth import *
 import protocol
+import thread
+import atexit
 
 PACKET_SIZE = 990
 
@@ -34,6 +34,8 @@ class BluetoothServer(Thread):
                           service_classes=[uuid, SERIAL_PORT_CLASS],
                           profiles=[SERIAL_PORT_PROFILE])
 
+        atexit.register(self.server_sock.close)
+
     # accept clients and create threads for them
     def run(self):
         while True:
@@ -53,14 +55,16 @@ class BluetoothClientThread(Thread):
         self.client_sock = client_sock
         self.client_info = client_info
         self.apphandler = apphandler
+        atexit.register(self.client_sock.close)
+        atexit.register(self.server_sock.close)
 
     def run(self):
         while True:
             try:
-                data = base64.b64decode(self.client_sock.recv(1024))            # receive and decode command
-                if len(data) == 0:                                              # close connection if data is empty
+                data = base64.b64decode(self.client_sock.recv(1024))
+                if len(data) == 0:
                     break
-                protocol.handle(self, data)
+                thread.start_new_thread(protocol.handle, (self, data, True))
             except IOError:
                 break
         # close connection
@@ -70,6 +74,6 @@ class BluetoothClientThread(Thread):
 
     def encode_and_send(self, header, msg):
         msg = base64.b64encode(msg)
-        print "strlen msg:", len(msg)
+        #print "strlen msg:", len(msg)
         self.client_sock.send(header + "" + str(len(msg)) + chr(0))
         self.client_sock.send(msg)
