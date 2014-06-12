@@ -37,7 +37,10 @@ void LegPathCommand::Execute(Spider& spider)
 		target.Print();
 		//Move leg to elements position
 		//Movement is synchronized
-		leg->SetAngles(target, true);// path.empty());
+		leg->SetAngles(target, false);// path.empty());
+		printf(TERM_BOLD TERM_GREEN "LegPathCommand>" TERM_RESET " Synchronizing...\n");
+		leg->Synchronize();
+		printf(TERM_BOLD TERM_GREEN "LegPathCommand>" TERM_RESET " Synchronization Completed\n");
 	}
 	printf(TERM_BOLD TERM_GREEN "LegPathCommand>" TERM_RESET " End of path\n");
 	//return when queue is empty

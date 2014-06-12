@@ -13,6 +13,7 @@
 #define COMMAND_ANGLE		204
 #define COMMAND_EOS			0xFA
 #define COMMAND_NOP			0xFB
+#define COMMAND_START_RESPONSE	160
 
 SpiController::SpiController()
 {
@@ -53,11 +54,32 @@ float SpiController::GetAngle(int motor, LegConfig modifier, bool sync)
 	return 0.0;
 }
 
+
+void SpiController::SetAngle(int motor, int byteAngle, int speed, bool sync)
+{
+	printf(TERM_RESET TERM_BOLD TERM_GREEN "SpiController>" TERM_RESET " Embedded command motor%i to %i @%i\n", motor, byteAngle, speed);
+	char buffer[5] = { COMMAND_START, (int)motor, (int)byteAngle, (int)speed, COMMAND_ANGLE };
+	bcm2835_spi_writenb(buffer, 5);
+	if (sync)
+	{
+		printf(TERM_RESET TERM_BOLD TERM_GREEN "SpiController>" TERM_RESET " Synchronizing... \n");
+		Synchronize(motor);
+		printf("done\n");
+	}
+}
+
 #define _BUFSIZE 25
-void autoComplete(uint8_t trigger)
+void SpiController::Synchronize(int motor)
+{
+	int _array[] = { motor };
+	Synchronize(_array, 1);
+}
+
+void SpiController::Synchronize(int motors[], int amount)
 {
 	while (true)
 	{
+		//Get the list of completed motors
 		uint8_t received;
 		uint8_t msg = COMMAND_START;
 		uint8_t receivedbuffer[_BUFSIZE];
@@ -67,52 +89,58 @@ void autoComplete(uint8_t trigger)
 		{
 			receivedbuffer[i] = 25;
 		}
+		//printf("Received:");
 		while (true)
 		{
 			received = bcm2835_spi_transfer(msg);
 			if (received == COMMAND_EOS || receivedcount >= _BUFSIZE) break;
-			if (msg == COMMAND_PROGRESS)
-			{
-				//Wait until the start command has been send, and the controller has returned a NOP over it
-				enabled = true;
-			}
 			msg = COMMAND_PROGRESS;
 			if (enabled)
 			{
 				receivedbuffer[receivedcount] = received;
 				receivedcount++;
+				//printf(" %i", received);
 			}
-			//printf("%02X ",received);
+			if (received == COMMAND_START_RESPONSE && msg == COMMAND_PROGRESS)
+			{
+				enabled = true;
+			}
 		}
-		for (int i = 0; i<receivedcount; i++)
+		//printf("\n");
+		//Check if the list contains the requested motor
+		bool result = true;
+		for (int i = 0; i < amount;i++)
 		{
-			if (receivedbuffer[i] == trigger)
+			//printf("Synced:");
+			for (int j = 0; j<receivedcount; j++)
 			{
-				return;
+				//printf(" %i", receivedbuffer[j]);
+				if (receivedbuffer[j] == motors[i])
+				{
+					//printf("!");
+					break;
+				}
+				if (receivedbuffer[j] == 25)
+				{
+					result = false;
+					break;
+				}
+				//If we're at the end, and the above statements failed
+				if (j == receivedcount - 1)
+				{
+					result = false;
+				}
 			}
-			if (receivedbuffer[i] == 25)
+			//printf("\n");
+			if (!result)
 			{
-				printf(TERM_RESET TERM_BOLD TERM_GREEN "SpiController>" TERM_RESET " Read failed results\n");
+				//printf("Failed to sync motor %i\n", motors[i]);
 				break;
 			}
 		}
+		if (result)
+			return;
+		//printf("Incomplete sync\n");
+		//usleep(1000 * 500);
 	}
-}
-
-void SpiController::SetAngle(int motor, int byteAngle, int speed, bool sync)
-{
-	printf(TERM_RESET TERM_BOLD TERM_GREEN "SpiController>" TERM_RESET " Embedded command motor%i to %i @%i\n", motor, byteAngle, speed);
-	char buffer[5] = { COMMAND_START, motor, byteAngle, speed, COMMAND_ANGLE };
-	bcm2835_spi_writenb(buffer, 5);
-	if (sync)
-	{
-		printf(TERM_RESET TERM_BOLD TERM_GREEN "SpiController>" TERM_RESET " Synchronizing... \n");
-		autoComplete(motor);
-		printf("done\n");
-	}
-}
-
-bool SpiController::IsDone(int motor, bool sync)
-{
-	return false;
 }

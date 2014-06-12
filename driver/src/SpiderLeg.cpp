@@ -101,6 +101,14 @@ void SpiderLeg::SetAngles(Vector3 target, bool sync)
 	//send angles
 	//setAngles(body,leg,toe,sync)
 }
+void SpiderLeg::Synchronize()
+{
+	int motors[3];
+	motors[0] = config.bodyIndex;
+	motors[1] = config.legIndex;
+	motors[2] = config.toeIndex;
+	master->GetSpiController()->Synchronize(motors, 3);
+}
 Vector3 SpiderLeg::Localize(Vector3 worldVector)
 {
 	return Vector3::Transform(worldVector, modifier);

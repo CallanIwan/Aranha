@@ -13,9 +13,9 @@ private:
 	Matrix modifier;
 	//The matrix that globalizes
 	Matrix modifier_inv;
-	LegConfig config;
 	Spider* master;
 public:
+	LegConfig config;
 	//DO NOT USE THIS CONSTRUCTOR
 	SpiderLeg();
 	//USE THIS ONE
@@ -33,6 +33,10 @@ public:
 	vector relative to the spiders center to the context of the spiders leg
 	*/
 	void SetAngles(Vector3 position, bool sync);
+	/**
+	This method blocks until the leg has reached its destination
+	*/
+	void Synchronize();
 	/**
 	Transforms a vector from the context of the spider to the individual leg
 	*/

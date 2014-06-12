@@ -8,6 +8,7 @@
 #include "Spider.h"
 #include "Vector3.h"
 #include "LegPathCommand.h"
+#include "LegSyncCommand.h"
 
 void isRoot()
 {
@@ -40,13 +41,17 @@ int main(int argc, const char* argv[])
 
 	printf("Program Entry succesfull\n");
 	Spider spider;
-	LegConfig config;
-	config.SetIndexes(0, 1, 2);
-	config.SetLength(1, 5, 5);
-	config.SetOffsets(0, 0, 0);
-	config.SetReversed(false, false, false);
-	SpiderLeg leg1 = SpiderLeg(&spider, Matrix::CreateTranslation(0, 10, 0), config);
-	spider.SetLeg(0, leg1);
+	for (int i = 0; i < 6; i++)
+	{
+		LegConfig config;
+		int moff = i * 3;
+		config.SetIndexes(moff + 0, moff + 1, moff + 2);
+		config.SetLength(1, 5, 5);
+		config.SetOffsets(0, 0, 0);
+		config.SetReversed(false, false, false);
+		SpiderLeg leg = SpiderLeg(&spider, Matrix::CreateTranslation(0, 10, 0) * Matrix::CreateRotationY((PI / 3) * i), config);
+		spider.SetLeg(i, leg);
+	}
 	spider.Print();
 
 	spider.GetSpiController()->Enable();
@@ -84,6 +89,23 @@ int main(int argc, const char* argv[])
 	pathCommand.AddVector(Vector3(3, 0, -10));
 
 	pathCommand.Execute(spider);
+	for (int i = 0; i < 18; i++)
+	{
+		spider.GetSpiController()->SetAngle(i, 0, 199, false);
+	}
+	//Ensure that the motors have time to jump
+	usleep(1000);
+	//Create command before setting the motors
+	int legs[6] = { 0, 1, 2, 3, 4, 5 };
+	LegSyncCommand cmd = LegSyncCommand(legs, 6);
+
+	for (int i = 0; i < 18; i++)
+	{
+		spider.GetSpiController()->SetAngle(i, 199, 1, false);
+	}
+	printf("All the legs are on their way\n");
+	cmd.Execute(spider);
+	printf("All legs are now synchronized\n");
 
 	printf("\n");
 	
@@ -94,11 +116,12 @@ int main(int argc, const char* argv[])
 		int leg = 0;
 		scanf("%i", &leg);
 		printf("You selected: %i\n", leg);
+		SpiderLeg* userLeg = spider.GetLeg(leg);
 		Vector3 vec = GetVector();
 		vec.Print();
-		Vector3 origin = leg1.Globalize(Vector3::One());
+		Vector3 origin = userLeg->Globalize(Vector3::One());
 		printf("Origin of leg: {%4.2f, %4.2f, %4.2f}\n",origin.x ,origin.y, origin.z);
-		Vector3 local = leg1.Localize(vec);
+		Vector3 local = userLeg->Localize(vec);
 		printf("Localized vector: {%4.2f, %4.2f, %4.2f}\n", local.x, local.y, local.z);
 	}
 }

@@ -70,6 +70,7 @@
     <ClCompile Include="ISpiderCommand.cpp" />
     <ClCompile Include="LegConfig.cpp" />
     <ClCompile Include="LegPathCommand.cpp" />
+    <ClCompile Include="LegSyncCommand.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Matrix.cpp" />
     <ClCompile Include="SpiController.cpp" />
@@ -84,6 +85,7 @@
     <ClInclude Include="Globals.h" />
     <ClInclude Include="ILegCommand.h" />
     <ClInclude Include="ISpiderCommand.h" />
+    <ClInclude Include="LegSyncCommand.h" />
     <ClInclude Include="SyncLock.h" />
     <ClInclude Include="LegConfig.h" />
     <ClInclude Include="LegPathCommand.h" />

@@ -23,8 +23,9 @@ public:
 	//Get the angle of a motor from the cache of the last Update() call
 	//if sync is false, the values are directly from the microcontroller directly
 	float GetAngle(int motor, LegConfig modifier, bool sync);
-	//Gets weather a motor is at its end position, references latest cache
-	//If sync is false, we will ask the microcontroller for the current value
-	bool IsDone(int motor, bool sync);
+	//Blocks until the selected motor is at its destination
+	void Synchronize(int motor);
+	//Same as above, but with multiple motors
+	void Synchronize(int motor[], int amount);
 };
 #endif
