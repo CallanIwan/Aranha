@@ -26,7 +26,16 @@ void SpiderMoveCommand::Execute(Spider* spider)
 
 	//Generate fullstep command
 	ComplexCommand fullstep;
+
+	//For each leg:
+	//Get resting pos (R)
+	//Globalize R
+	//Draw frame around R in globalspace
+	//Rotate R to fit the direction we are moving in
+	//Localize all the points in the frame
+	//Generate Sync
 	std::list<ISpiderCommand*>* groupA = fullstep.GetTimeline(0);
+
 	std::list<ISpiderCommand*>* groupB = fullstep.GetTimeline(1);
 	//run command
 }

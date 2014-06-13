@@ -31,17 +31,60 @@ Vector3 GetVector()
 	Vector3 vec(x, y, z);
 	return vec;
 }
+#define G2R	(PI / 180)
+void SetLeg(Spider* spider, int index, int motorstart, float bodyLength, float legLength, float toeLength, float bodyOffset, float legOffset, float toeOffset, bool bodyInv, bool legInv, bool toeInv, Matrix modifier)
+{
+	LegConfig config;
+	config.SetIndexes(motorstart + 0, motorstart + 1, motorstart + 2);
+	config.SetLength(bodyLength, legLength, toeLength);
+	config.SetOffsets(bodyOffset, legOffset, toeOffset);
+	config.SetReversed(bodyInv, legInv, toeInv);
+	SpiderLeg leg = SpiderLeg(spider, modifier, config);
+	spider->SetLeg(0, leg);
+}
 
 void SpiderSetup(Spider* spider)
 {
-	int moff = 1;
-	LegConfig frontleft;
-	config.SetIndexes(moff + 0, moff + 1, moff + 2);
-	config.SetLength(1, 5, 5);
-	config.SetOffsets(0, 0, 0);
-	config.SetReversed(false, false, false);
-	SpiderLeg leg = SpiderLeg(spider, Matrix::CreateTranslation(0, 10, 0) * Matrix::CreateRotationY((PI / 3) * i), config);
-	spider->SetLeg(i, leg);
+	int moff = 0;
+	float bl = 42.0;
+	float ll = 58.2;
+	float tl = 123.6;
+	/* FRONT LEFT LEG */
+	SetLeg(spider, 0, 0,
+		bl, ll, tl,
+		0, -40, 0,
+		true, true, false,
+		Matrix::CreateTranslation(100, 0, 0) * Matrix::CreateRotationY(90 * G2R));
+	/* FRONT RIGHT LEG */
+	SetLeg(spider, 1, 3,
+		bl, ll, tl,
+		0, -40, 0,
+		true, true, false,
+		Matrix::CreateTranslation(100, 0, 0) * Matrix::CreateRotationY(90 * G2R));
+	/* MIDDLE LEFT LEG */
+	SetLeg(spider, 2, 6,
+		bl, ll, tl,
+		0, -40, 0,
+		true, true, false,
+		Matrix::CreateTranslation(100, 0, 0) * Matrix::CreateRotationY(90 * G2R));
+	/* MIDDLE RIGHT LEG */
+	SetLeg(spider, 3, 9,
+		bl, ll, tl,
+		0, -40, 0,
+		true, true, false,
+		Matrix::CreateTranslation(100, 0, 0) * Matrix::CreateRotationY(90 * G2R));
+	/* BACK RIGHT LEG */
+	SetLeg(spider, 4, 12,
+		bl, ll, tl,
+		0, -40, 0,
+		true, true, false,
+		Matrix::CreateTranslation(100, 0, 0) * Matrix::CreateRotationY(90 * G2R));
+	/* BACK RIGHT LEG */
+	SetLeg(spider, 5, 15,
+		bl, ll, tl,
+		0, -40, 0,
+		true, true, false,
+		Matrix::CreateTranslation(100, 0, 0) * Matrix::CreateRotationY(90 * G2R));
 }
 
 int main(int argc, const char* argv[])
