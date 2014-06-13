@@ -45,13 +45,19 @@
     <ClCompile Include="SyncLock.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ILegCommand.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="ISpiderCommand.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="LegSyncCommand.cpp">
+    <ClCompile Include="ComplexCommand.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ThreadLock.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="VectorCommand.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SyncCommand.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -83,9 +89,6 @@
     <ClInclude Include="SpiderMoveCommand.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ILegCommand.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="LegPathCommand.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -95,7 +98,16 @@
     <ClInclude Include="ForwardDeclarations.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="LegSyncCommand.h">
+    <ClInclude Include="ComplexCommand.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ThreadLock.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SyncCommand.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="VectorCommand.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

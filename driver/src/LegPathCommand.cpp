@@ -22,10 +22,10 @@ void LegPathCommand::AddVector(Vector3 item)
 {
 	path.push(item);
 }
-void LegPathCommand::Execute(Spider& spider)
+void LegPathCommand::Execute(Spider* spider)
 {
 	//Get the leg we operate on
-	SpiderLeg* leg = spider.GetLeg(legIndex);
+	SpiderLeg* leg = spider->GetLeg(legIndex);
 	printf(TERM_RESET TERM_BOLD TERM_GREEN "LegPathCommand>" TERM_RESET " Starting path:\n");
 	//While there are elements in the path
 	while (!path.empty())

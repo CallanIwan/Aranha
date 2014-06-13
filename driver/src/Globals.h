@@ -1,5 +1,4 @@
-#ifndef HEADER_GUARD_GLOBALS
-#define HEADER_GUARD_GLOBALS
+#pragma once
 
 #include "ForwardDeclarations.h"
 
@@ -22,5 +21,3 @@
 #define TERM_CYAN		"\x1B[36m"
 #define TERM_WHITE		"\x1B[37m"
 #define TERM_RESET		"\033[0m"
-
-#endif

@@ -10,7 +10,7 @@
 #include "ISpiderCommand.h"
 #include "SpiController.h"
 
-class Spider : public SyncLock
+class Spider
 {
 private:
 	SpiderLeg legs[GLOBAL_LEG_COUNT];

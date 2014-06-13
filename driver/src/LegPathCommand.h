@@ -4,10 +4,10 @@
 #include <queue>
 
 #include "Globals.h"
-#include "ILegCommand.h"
+#include "ISpiderCommand.h"
 #include "Vector3.h"
 
-class LegPathCommand : public ILegCommand
+class LegPathCommand : public ISpiderCommand
 {
 private:
 	int legIndex;
@@ -23,7 +23,7 @@ public:
 	*/
 	void AddVector(Vector3 item);
 
-	void Execute(Spider& spider);
+	void Execute(Spider* spider);
 };
 
 #endif

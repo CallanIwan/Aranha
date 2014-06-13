@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <stdio.h>
+#include <unistd.h>
 #include <math.h>
 
 #include "Spider.h"
@@ -107,7 +108,10 @@ void SpiderLeg::Synchronize()
 	motors[0] = config.bodyIndex;
 	motors[1] = config.legIndex;
 	motors[2] = config.toeIndex;
-	master->GetSpiController()->Synchronize(motors, 3);
+	while (!master->GetSpiController()->IsCompleted(motors, 3))
+	{
+		usleep(1000 * 20);
+	}
 }
 Vector3 SpiderLeg::Localize(Vector3 worldVector)
 {

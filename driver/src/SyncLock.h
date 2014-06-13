@@ -3,26 +3,21 @@
 
 #include "Globals.h"
 
-#define SYNCLOCK_ERROR		-2
-#define SYNCLOCK_NONE		-1
-#define SYNCLOCK_CAPACITY	16
-#define SYNCLOCK_MAXIMUM	SYNCLOCK_CAPACITY - 1
-
 class SyncLock
 {
-protected:
-	int syncLocks[SYNCLOCK_CAPACITY];
+private:
+	int lockLevel;
 public:
-	SyncLock();
+	SyncLock(int start);
 	~SyncLock();
-	//Increase the lock of a syncgroup by 1
-	virtual void Lock(int lockID);
-	//Decrease the lock of a syncgroup by 1
-	virtual void Unlock(int lockID);
-	//Get the locklevel of a syncgroup
-	virtual int GetLockLevel(int lockID);
-	//Block until the locklevel of a syncgroup 0 is
-	virtual void WaitForUnlock(int lockID);
+	//Increase the lock by a certain amount
+	virtual void Lock();
+	//Decrease the lock by 1
+	virtual void Unlock();
+	//Gets the locklevel of a syncgroup
+	virtual int GetLockLevel();
+	//Block until the locklevel reaches 0
+	virtual void WaitForUnlock();
 };
 
 #endif

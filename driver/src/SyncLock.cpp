@@ -1,47 +1,40 @@
 #include "SyncLock.h"
 
-SyncLock::SyncLock()
+#include "unistd.h"
+
+SyncLock::SyncLock(int amount)
 {
-	for (int i = 0; i < SYNCLOCK_CAPACITY; i++)
-	{
-		syncLocks[i] = 0;
-	}
+	lockLevel = amount;
 }
 SyncLock::~SyncLock()
 {
 	
 }
 
-void SyncLock::Lock(int lockID)
+void SyncLock::Lock()
 {
-	if (lockID < 0 || lockID >= SYNCLOCK_CAPACITY)
-		return;
-	syncLocks[lockID]++;
+	lockLevel++;
 }
-void SyncLock::Unlock(int lockID)
+void SyncLock::Unlock()
 {
-	if (lockID < 0 || lockID >= SYNCLOCK_CAPACITY)
-		return;
-	if (syncLocks>0)
+	if (lockLevel > 0)
 	{
-		syncLocks[lockID]--;
+		lockLevel--;
 	}
 	else
 	{
-		syncLocks[lockID] = 0;
+		//In case the locklevel became negative
+		lockLevel = 0;
 	}
-
 }
-int SyncLock::GetLockLevel(int lockID)
+int SyncLock::GetLockLevel()
 {
-	if (lockID < 0 || lockID >= SYNCLOCK_CAPACITY)
-		return SYNCLOCK_ERROR;
-	return syncLocks[lockID];
-
+	return lockLevel;
 }
-void SyncLock::WaitForUnlock(int lockID)
+void SyncLock::WaitForUnlock()
 {
-	if (lockID < 0 || lockID >= SYNCLOCK_CAPACITY)
-		return;
-	while (syncLocks[lockID] > 0){};
+	while (GetLockLevel() > 0)
+	{
+		usleep(1000 * 20);
+	};
 }
