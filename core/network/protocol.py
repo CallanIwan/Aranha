@@ -7,19 +7,19 @@ so the network_handler knows which functions to call.
 import base64
 import json
 
-# end of message byte
+#: End of message byte
 H_END = ("" + chr(0)) * 990
 
-# header bytes, intended for the app to know what to receive
+#: Header bytes, intended for the app to know what to receive
 H_IMAGE = "" + chr(1)
 H_SENSOR = "" + chr(2)
 H_VISION = "" + chr(3)
 H_VISION_MODUS = "" + chr(5)
 
-# receiving header bytes
+#: Receiving header bytes
 H_MOV_RECV = "" + chr(4)
 
-# vision scripts
+# Vision scripts
 H_VISION_COLORCARD = "" + chr(10)
 H_VISION_COLORCARD_TX = "" + chr(11)
 H_VISION_BALLOON = "" + chr(12)
@@ -29,9 +29,15 @@ H_VISION_OIL = "" + chr(13)
 vision_modus = H_VISION_COLORCARD
 colorcard = []
 
-
-# handle the data that is received and send data back if necessary
 def handle(handler, data):
+    """
+
+    @param handler:
+    @type handler: Handler class object.
+    @param data: Data sent.
+    @type data: String
+    @return: returns nothing.
+    """
     global colorcard
     global vision_modus
 
@@ -72,4 +78,9 @@ def handle(handler, data):
 
 
 def decode_json(json_str):
+    """
+    Decodes Json
+    @param json_str: JSON to decode.
+    @return: decoded JSON.
+    """
     return json.dumps(json_str)
