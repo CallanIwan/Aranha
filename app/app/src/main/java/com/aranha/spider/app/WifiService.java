@@ -272,6 +272,13 @@ public class WifiService  extends SpiderControllerService {
     }
 
     @Override
+    public void setCameraEnabled(MainActivity mainActivity, boolean value) {
+        //TODO:
+        if(value)
+            mainActivity.initWifiCamera();
+    }
+
+    @Override
     public void connect() {
         //
     }

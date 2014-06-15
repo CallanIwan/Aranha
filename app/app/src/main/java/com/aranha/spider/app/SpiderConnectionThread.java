@@ -201,11 +201,6 @@ public class SpiderConnectionThread extends Thread {
     }
     public void sendSpiderInstruction(SpiderInstruction instruction) {
         //Log.d(TAG, "Sending instruction: " + instruction.toString().getBytes());
-
-        android.os.Process.getThreadPriority(android.os.Process.myTid());
-        int callingThread = android.os.Process.myTid();
-        System.out.println(" ZWEETBALLEN: " + callingThread);
-
         write(Base64.encode(instruction.toString().getBytes(), Base64.DEFAULT));
     }
 

@@ -148,6 +148,24 @@ public class BluetoothService extends SpiderControllerService {
         Log.d(TAG, "Discovering bluetooth devices!");
     }
 
+    private static int CAMERA_UPDATE_DELAY = 5000;
+    private static Handler requestCameraImagesHandler = new Handler();
+    private Runnable requestCameraImagesRunnable = new Runnable() {
+        @Override
+        public void run() {
+            send(SpiderInstruction.requestCameraImage);
+            requestCameraImagesHandler.postDelayed(this, CAMERA_UPDATE_DELAY);
+        }
+    };
+
+    @Override
+    public void setCameraEnabled(MainActivity mainActivity, boolean value) {
+        if(value)
+            requestCameraImagesHandler.postDelayed(requestCameraImagesRunnable, CAMERA_UPDATE_DELAY);
+        else
+            requestCameraImagesHandler.removeCallbacks(requestCameraImagesRunnable);
+    }
+
     @Override
     public void setRaspberryPiName(String name) {
         mRaspberryPiName = name;

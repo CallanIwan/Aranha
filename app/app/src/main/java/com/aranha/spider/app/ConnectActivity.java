@@ -49,7 +49,6 @@ public class ConnectActivity extends ActionBarActivity implements View.OnClickLi
         setContentView(R.layout.activity_connect);
 
         // Get the UI Resources from the xml
-        //
         mConnectButton = (Button)findViewById(R.id.connectButton);
         mConnectButton.setOnClickListener(this);
         mConnectButton.setEnabled(false);
@@ -71,7 +70,7 @@ public class ConnectActivity extends ActionBarActivity implements View.OnClickLi
             Class serviceClass = Class.forName(serviceClassString);
             if(serviceClass != null) {
                 mSelectedConnectServiceClass = serviceClass;
-                Log.d(TAG, "Serviceclass selected: " + serviceClass);
+                Log.d(TAG, "serviceClass selected: " + serviceClass);
                 startConnectionService();
             } else {
                 Log.e(TAG, "Cannot connect to the SpiderController service! (class not found)");
@@ -89,8 +88,6 @@ public class ConnectActivity extends ActionBarActivity implements View.OnClickLi
         if(mSelectedConnectServiceClass != null && mSelectedConnectServiceClass == BluetoothService.class) {
             BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
             Log.d(TAG, "onStart()");
-
-
 
             if (mBluetoothAdapter == null) {
                 // Device does not support Bluetooth

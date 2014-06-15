@@ -17,6 +17,8 @@ public abstract class SpiderControllerService extends Service implements SpiderC
 
 
     public abstract void discoverDevices();
+    public abstract void setCameraEnabled(MainActivity mainActivity, boolean value);
+
 
     /**
      * The activity which connects to this service can receive
