@@ -49,7 +49,7 @@ public class WifiService  extends SpiderControllerService {
         WifiInfo currentConnection = mWifiManager.getConnectionInfo();
         if(currentConnection != null) {
             if(currentConnection.getSSID() != null && currentConnection.getSSID().equals(raspberrySSID_quoted)) {
-                setIsConnected(true);
+                connect();
                 Log.d(TAG, "Already connected to the Raspberry");
             }
         }
@@ -83,6 +83,11 @@ public class WifiService  extends SpiderControllerService {
         return false;
     }
 
+    /**
+     * Checks this device's existing wifi configs to see if the spider network is already there.
+     * @param configList List with wifi configurations.
+     * @return True when the network already exists.
+     */
     public boolean checkExistingWifiConfigs(List<WifiConfiguration> configList) {
         if(mWifiConfiguration != null)
             return true;
@@ -134,7 +139,10 @@ public class WifiService  extends SpiderControllerService {
         return false;
     }
 
-    public void checkCurrentWifiScanList() {
+    /**
+     * Checks the current WifiScan list for the spider. Then connects to the network if it's there.
+     */
+    public void checkWifiListAndConnectToSpider() {
         List<ScanResult> wifiScanList = mWifiManager.getScanResults();
 
         for (int i = 0; i < wifiScanList.size(); i++) {
@@ -155,65 +163,51 @@ public class WifiService  extends SpiderControllerService {
         }
     }
 
+    /**
+     * Wifi Broadcast receiver
+     */
     boolean mIsWifiReceiverRegistered = false;
     BroadcastReceiver mWifiReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
 
-            if(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION.equals(action)) {
-                if(!isConnected)
-                    checkCurrentWifiScanList();
-            }
-            else if(WifiManager.WIFI_STATE_CHANGED_ACTION.equals(action)) {
+            // Only do something when we are not yet connected.
+            //
+            if(!isConnected) {
 
-                int state = intent.getIntExtra(WifiManager.EXTRA_WIFI_STATE, WifiManager.WIFI_STATE_UNKNOWN);
+                if (WifiManager.SCAN_RESULTS_AVAILABLE_ACTION.equals(action)) {
+                    checkWifiListAndConnectToSpider();
+                } else if (WifiManager.WIFI_STATE_CHANGED_ACTION.equals(action)) {
 
-                if(state == WifiManager.WIFI_STATE_DISABLED) {
-                    Log.d(TAG, "State changed to disabled");
-                    setIsConnected(false);
-                }
-                else if(state == WifiManager.WIFI_STATE_ENABLED) {
-                    Log.d(TAG, "State changed to enabled");
-                    checkCurrentWifiScanList();
-                }
-            }
-            else if(WifiManager.NETWORK_STATE_CHANGED_ACTION.equals(action)) {
+                    int state = intent.getIntExtra(WifiManager.EXTRA_WIFI_STATE, WifiManager.WIFI_STATE_UNKNOWN);
 
-                NetworkInfo nwInfo = intent.getParcelableExtra(WifiManager.EXTRA_NETWORK_INFO);
-                if(NetworkInfo.State.CONNECTED.equals(nwInfo.getState())) {
-                    if(nwInfo.getExtraInfo().equals(raspberrySSID_quoted)) {
-                        Log.d(TAG, "is Connected!!!!! ");
+                    if (state == WifiManager.WIFI_STATE_DISABLED) {
+                        Log.d(TAG, "State changed to disabled");
+                        isConnected = false;
 
-                        setIsConnected(true);
+                    } else if (state == WifiManager.WIFI_STATE_ENABLED) {
+                        Log.d(TAG, "State changed to enabled");
+                        checkWifiListAndConnectToSpider();
                     }
-                    else {
-                        setIsConnected(false);
+                } else if (WifiManager.NETWORK_STATE_CHANGED_ACTION.equals(action)) {
+
+                    NetworkInfo nwInfo = intent.getParcelableExtra(WifiManager.EXTRA_NETWORK_INFO);
+                    if (NetworkInfo.State.CONNECTED.equals(nwInfo.getState())) {
+                        if (nwInfo.getExtraInfo().equals(raspberrySSID_quoted)) {
+                            connect();
+                        } else {
+                            isConnected = false;
+                            sendMessageToActivity(SpiderMessage.CONNECTION_CLOSED);
+                        }
                     }
-                }
-                else if(NetworkInfo.State.CONNECTING.equals(nwInfo.getState())) {
-                    Toast.makeText(WifiService.this, "Trying to connect to the spidar", Toast.LENGTH_LONG).show();
+                    else if (NetworkInfo.State.CONNECTING.equals(nwInfo.getState())) {
+                        Toast.makeText(WifiService.this, "Trying to connect to the spider", Toast.LENGTH_LONG).show();
+                    }
                 }
             }
         }
     };
-
-    public void setIsConnected(boolean value) {
-        if(isConnected == value) {
-            return;
-        }
-
-        isConnected = value;
-
-        Log.d(TAG, "Starting ConnectToSpiderThread");
-
-        if(value) {
-            ConnectToSpiderThread thread = new ConnectToSpiderThread(raspberryIP, raspberryPort, mWifiConnectionMessenger);
-            thread.start();
-        } else {
-            sendMessageToActivity(SpiderMessage.CONNECTION_CLOSED);
-        }
-    }
 
     /**
      * The message handler. This receives all the incoming messages from the Raspberry Pi.
@@ -228,6 +222,7 @@ public class WifiService  extends SpiderControllerService {
                 case CONNECTED_TO_RASPBERRYPI:
                     if(msg.obj != null && msg.obj.getClass() == SpiderConnectionThread.class) {
                         mSpiderConnectionThread = (SpiderConnectionThread)msg.obj;
+                        isConnected = true;
                         Log.d(TAG, "Wifi connection thread established");
                     }
                     sendMessageToActivity(SpiderMessage.CONNECTED_TO_RASPBERRYPI);
@@ -237,6 +232,7 @@ public class WifiService  extends SpiderControllerService {
                 case CONNECTION_CLOSED:
                 case CONNECTION_LOST:
                     mSpiderConnectionThread = null;
+                    isConnected = false;
                     sendMessageToActivity(spiderMsg);
                     break;
 
@@ -280,14 +276,17 @@ public class WifiService  extends SpiderControllerService {
 
     @Override
     public void connect() {
-        //
+        if(!isConnected) {
+            ConnectToSpiderThread thread = new ConnectToSpiderThread(raspberryIP, raspberryPort, mWifiConnectionMessenger);
+            thread.start();
+        }
     }
 
     @Override
     public void disconnect() {
         if(isConnected) {
             mWifiManager.disconnect();
-            setIsConnected(false);
+            isConnected = false;
         }
     }
 
