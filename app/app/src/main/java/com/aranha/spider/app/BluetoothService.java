@@ -20,6 +20,7 @@ public class BluetoothService extends SpiderControllerService {
     private static final String TAG = "BluetoothService";
 
     private boolean isConnected = false;
+    private boolean isTryingToConnect = false;
     private BluetoothAdapter mBluetoothAdapter;
     private BluetoothDevice mRaspberryPiBluetoothDevice;
     private SpiderConnectionThread mSpiderConnectionThread;
@@ -36,6 +37,8 @@ public class BluetoothService extends SpiderControllerService {
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         // Register bluetooth device-discovery.
         IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+        filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
+
         registerReceiver(mBluetoothReceiver, filter); // Don't forget to unregister in onDestroy()
 
         Log.d(TAG,"Bluetooth receiver registered Bonded devices: " + mBluetoothAdapter.getBondedDevices().size());
@@ -70,6 +73,13 @@ public class BluetoothService extends SpiderControllerService {
                     discoveredDevicesAdapter.add(device);
                 }
             }
+            else if(BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
+
+                if(!isConnected && !isTryingToConnect) {
+                    Log.d(TAG, "Continue searching for device.");
+                    discoverDevices();
+                }
+            }
         }
     };
 
@@ -99,6 +109,7 @@ public class BluetoothService extends SpiderControllerService {
                     if(msg.obj != null && msg.obj.getClass() == SpiderConnectionThread.class) {
                         mSpiderConnectionThread = (SpiderConnectionThread)msg.obj;
                         isConnected = true;
+                        isTryingToConnect = false;
                         Log.d(TAG, "Bluetooth connection thread established");
                     }
                     sendMessageToActivity(SpiderMessage.CONNECTED_TO_RASPBERRYPI);
@@ -136,9 +147,10 @@ public class BluetoothService extends SpiderControllerService {
 
     @Override
     public void discoverDevices() {
-        mBluetoothAdapter.cancelDiscovery();
-        mBluetoothAdapter.startDiscovery();
-        Log.d(TAG, "Discovering bluetooth devices!");
+        if(!mBluetoothAdapter.isDiscovering()) {
+            mBluetoothAdapter.startDiscovery();
+            Log.d(TAG, "Discovering bluetooth devices!");
+        }
     }
 
     private static int CAMERA_UPDATE_DELAY = 5000;
@@ -176,6 +188,7 @@ public class BluetoothService extends SpiderControllerService {
     @Override
     public void connect() {
         if(!isConnected) {
+            isTryingToConnect = true;
             mBluetoothAdapter.cancelDiscovery();
             ConnectToSpiderThread btThread = new ConnectToSpiderThread(mRaspberryPiBluetoothDevice, mBluetoothConnectorMessenger);
             btThread.start();
@@ -190,6 +203,7 @@ public class BluetoothService extends SpiderControllerService {
         mRaspberryPiBluetoothDevice = null;
         mSpiderConnectionThread = null;
         isConnected = false;
+        isTryingToConnect = false;
     }
 
     @Override
