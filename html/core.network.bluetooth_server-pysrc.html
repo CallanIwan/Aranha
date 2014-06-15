@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>core.network.bluetooth_server</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="core-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+      <th class="navbar" width="100%"></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="core-module.html">Package&nbsp;core</a> ::
+        <a href="core.network-module.html">Package&nbsp;network</a> ::
+        Module&nbsp;bluetooth_server
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="core.network.bluetooth_server-pysrc.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<h1 class="epydoc">Source Code for <a href="core.network.bluetooth_server-module.html">Module core.network.bluetooth_server</a></h1>
+<pre class="py-src">
+<a name="L1"></a><tt class="py-lineno"> 1</tt>  <tt class="py-line"><tt class="py-docstring">"""</tt> </tt>
+<a name="L2"></a><tt class="py-lineno"> 2</tt>  <tt class="py-line"><tt class="py-docstring">network/bluetooth_server.py</tt> </tt>
+<a name="L3"></a><tt class="py-lineno"> 3</tt>  <tt class="py-line"><tt class="py-docstring">Starts a bluetooth server with max 7 connections.</tt> </tt>
+<a name="L4"></a><tt class="py-lineno"> 4</tt>  <tt class="py-line"><tt class="py-docstring">Receives and sends data from/to paired client.</tt> </tt>
+<a name="L5"></a><tt class="py-lineno"> 5</tt>  <tt class="py-line"><tt class="py-docstring">PS3 controller: receive only</tt> </tt>
+<a name="L6"></a><tt class="py-lineno"> 6</tt>  <tt class="py-line"><tt class="py-docstring">Android App: receive/send</tt> </tt>
+<a name="L7"></a><tt class="py-lineno"> 7</tt>  <tt class="py-line"><tt class="py-docstring">"""</tt> </tt>
+<a name="L8"></a><tt class="py-lineno"> 8</tt>  <tt class="py-line"><tt class="py-keyword">import</tt> <tt class="py-name">base64</tt> </tt>
+<a name="L9"></a><tt class="py-lineno"> 9</tt>  <tt class="py-line"><tt class="py-keyword">from</tt> <tt class="py-name">threading</tt> <tt class="py-keyword">import</tt> <tt class="py-name">Thread</tt> </tt>
+<a name="L10"></a><tt class="py-lineno">10</tt>  <tt class="py-line"><tt class="py-keyword">from</tt> <tt class="py-name">bluetooth</tt> <tt class="py-keyword">import</tt> <tt class="py-op">*</tt> </tt>
+<a name="L11"></a><tt class="py-lineno">11</tt>  <tt class="py-line"><tt class="py-keyword">import</tt> <tt id="link-0" class="py-name" targets="Module core.network.protocol=core.network.protocol-module.html"><a title="core.network.protocol" class="py-name" href="#" onclick="return doclink('link-0', 'protocol', 'link-0');">protocol</a></tt> </tt>
+<a name="L12"></a><tt class="py-lineno">12</tt>  <tt class="py-line"><tt class="py-keyword">import</tt> <tt class="py-name">thread</tt> </tt>
+<a name="L13"></a><tt class="py-lineno">13</tt>  <tt class="py-line"><tt class="py-keyword">import</tt> <tt class="py-name">atexit</tt> </tt>
+<a name="L14"></a><tt class="py-lineno">14</tt>  <tt class="py-line"> </tt>
+<a name="L15"></a><tt class="py-lineno">15</tt>  <tt class="py-line"><tt id="link-1" class="py-name" targets="Variable core.network.bluetooth_server.PACKET_SIZE=core.network.bluetooth_server-module.html#PACKET_SIZE"><a title="core.network.bluetooth_server.PACKET_SIZE" class="py-name" href="#" onclick="return doclink('link-1', 'PACKET_SIZE', 'link-1');">PACKET_SIZE</a></tt> <tt class="py-op">=</tt> <tt class="py-number">990</tt> </tt>
+<a name="L16"></a><tt class="py-lineno">16</tt>  <tt class="py-line"> </tt>
+<a name="L17"></a><tt class="py-lineno">17</tt>  <tt class="py-line"> </tt>
+<a name="BluetoothServer"></a><div id="BluetoothServer-def"><a name="L18"></a><tt class="py-lineno">18</tt> <a class="py-toggle" href="#" id="BluetoothServer-toggle" onclick="return toggle('BluetoothServer');">-</a><tt class="py-line"><tt class="py-keyword">class</tt> <a class="py-def-name" href="core.network.bluetooth_server.BluetoothServer-class.html">BluetoothServer</a><tt class="py-op">(</tt><tt class="py-base-class">Thread</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="BluetoothServer-collapsed" style="display:none;" pad="++" indent="++++"></div><div id="BluetoothServer-expanded"><a name="L19"></a><tt class="py-lineno">19</tt>  <tt class="py-line"> </tt>
+<a name="BluetoothServer.__init__"></a><div id="BluetoothServer.__init__-def"><a name="L20"></a><tt class="py-lineno">20</tt> <a class="py-toggle" href="#" id="BluetoothServer.__init__-toggle" onclick="return toggle('BluetoothServer.__init__');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="core.network.bluetooth_server.BluetoothServer-class.html#__init__">__init__</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">apphandler</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="BluetoothServer.__init__-collapsed" style="display:none;" pad="++" indent="++++++++"></div><div id="BluetoothServer.__init__-expanded"><a name="L21"></a><tt class="py-lineno">21</tt>  <tt class="py-line">        <tt class="py-name">super</tt><tt class="py-op">(</tt><tt id="link-2" class="py-name" targets="Class core.network.bluetooth_server.BluetoothServer=core.network.bluetooth_server.BluetoothServer-class.html"><a title="core.network.bluetooth_server.BluetoothServer" class="py-name" href="#" onclick="return doclink('link-2', 'BluetoothServer', 'link-2');">BluetoothServer</a></tt><tt class="py-op">,</tt> <tt class="py-name">self</tt><tt class="py-op">)</tt><tt class="py-op">.</tt><tt id="link-3" class="py-name" targets="Method core.aranha.Aranha.__init__()=core.aranha.Aranha-class.html#__init__,Method core.control.app_handler.AppHandler.__init__()=core.control.app_handler.AppHandler-class.html#__init__,Method core.control.control_handler.ControlHandler.__init__()=core.control.control_handler.ControlHandler-class.html#__init__,Method core.control.control_interface.Control.__init__()=core.control.control_interface.Control-class.html#__init__,Method core.control.ps3_handler.PS3Handler.__init__()=core.control.ps3_handler.PS3Handler-class.html#__init__,Method core.network.bluetooth_server.BluetoothClientThread.__init__()=core.network.bluetooth_server.BluetoothClientThread-class.html#__init__,Method core.network.bluetooth_server.BluetoothServer.__init__()=core.network.bluetooth_server.BluetoothServer-class.html#__init__,Method core.network.network_handler.NetworkHandler.__init__()=core.network.network_handler.NetworkHandler-class.html#__init__,Method core.network.wifi_server.WifiServer.__init__()=core.network.wifi_server.WifiServer-class.html#__init__"><a title="core.aranha.Aranha.__init__
+core.control.app_handler.AppHandler.__init__
+core.control.control_handler.ControlHandler.__init__
+core.control.control_interface.Control.__init__
+core.control.ps3_handler.PS3Handler.__init__
+core.network.bluetooth_server.BluetoothClientThread.__init__
+core.network.bluetooth_server.BluetoothServer.__init__
+core.network.network_handler.NetworkHandler.__init__
+core.network.wifi_server.WifiServer.__init__" class="py-name" href="#" onclick="return doclink('link-3', '__init__', 'link-3');">__init__</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt> </tt>
+<a name="L22"></a><tt class="py-lineno">22</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">daemon</tt> <tt class="py-op">=</tt> <tt class="py-name">True</tt>                              <tt class="py-comment"># if main is killed, this also gets killed</tt> </tt>
+<a name="L23"></a><tt class="py-lineno">23</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">apphandler</tt> <tt class="py-op">=</tt> <tt class="py-name">apphandler</tt>                    <tt class="py-comment"># pass apphandler object so we can pass control commands to it</tt> </tt>
+<a name="L24"></a><tt class="py-lineno">24</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">server_sock</tt> <tt class="py-op">=</tt> <tt class="py-name">BluetoothSocket</tt><tt class="py-op">(</tt><tt class="py-name">RFCOMM</tt><tt class="py-op">)</tt>      <tt class="py-comment"># create socket</tt> </tt>
+<a name="L25"></a><tt class="py-lineno">25</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">server_sock</tt><tt class="py-op">.</tt><tt class="py-name">bind</tt><tt class="py-op">(</tt><tt class="py-op">(</tt><tt class="py-string">""</tt><tt class="py-op">,</tt> <tt class="py-name">PORT_ANY</tt><tt class="py-op">)</tt><tt class="py-op">)</tt>           <tt class="py-comment"># bind to bluetooth adapter</tt> </tt>
+<a name="L26"></a><tt class="py-lineno">26</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">server_sock</tt><tt class="py-op">.</tt><tt class="py-name">listen</tt><tt class="py-op">(</tt><tt class="py-number">1</tt><tt class="py-op">)</tt>                      <tt class="py-comment"># server listens to accept 1 connection at a time</tt> </tt>
+<a name="L27"></a><tt class="py-lineno">27</tt>  <tt class="py-line"> </tt>
+<a name="L28"></a><tt class="py-lineno">28</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">port</tt> <tt class="py-op">=</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">server_sock</tt><tt class="py-op">.</tt><tt class="py-name">getsockname</tt><tt class="py-op">(</tt><tt class="py-op">)</tt><tt class="py-op">[</tt><tt class="py-number">1</tt><tt class="py-op">]</tt>   <tt class="py-comment"># socket is bound on this port</tt> </tt>
+<a name="L29"></a><tt class="py-lineno">29</tt>  <tt class="py-line"> </tt>
+<a name="L30"></a><tt class="py-lineno">30</tt>  <tt class="py-line">        <tt class="py-comment"># advertise service</tt> </tt>
+<a name="L31"></a><tt class="py-lineno">31</tt>  <tt class="py-line">        <tt class="py-name">uuid</tt> <tt class="py-op">=</tt> <tt class="py-string">"9d7debbc-c85d-11d1-9eb4-006008c3a19a"</tt>   <tt class="py-comment"># ID of the service</tt> </tt>
+<a name="L32"></a><tt class="py-lineno">32</tt>  <tt class="py-line">        <tt class="py-name">advertise_service</tt><tt class="py-op">(</tt><tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">server_sock</tt><tt class="py-op">,</tt> <tt class="py-string">"Aranha"</tt><tt class="py-op">,</tt>   <tt class="py-comment"># start service, so the app can connect</tt> </tt>
+<a name="L33"></a><tt class="py-lineno">33</tt>  <tt class="py-line">                          <tt class="py-name">service_id</tt><tt class="py-op">=</tt><tt class="py-name">uuid</tt><tt class="py-op">,</tt> </tt>
+<a name="L34"></a><tt class="py-lineno">34</tt>  <tt class="py-line">                          <tt class="py-name">service_classes</tt><tt class="py-op">=</tt><tt class="py-op">[</tt><tt class="py-name">uuid</tt><tt class="py-op">,</tt> <tt class="py-name">SERIAL_PORT_CLASS</tt><tt class="py-op">]</tt><tt class="py-op">,</tt> </tt>
+<a name="L35"></a><tt class="py-lineno">35</tt>  <tt class="py-line">                          <tt class="py-name">profiles</tt><tt class="py-op">=</tt><tt class="py-op">[</tt><tt class="py-name">SERIAL_PORT_PROFILE</tt><tt class="py-op">]</tt><tt class="py-op">)</tt> </tt>
+<a name="L36"></a><tt class="py-lineno">36</tt>  <tt class="py-line"> </tt>
+<a name="L37"></a><tt class="py-lineno">37</tt>  <tt class="py-line">        <tt class="py-name">atexit</tt><tt class="py-op">.</tt><tt class="py-name">register</tt><tt class="py-op">(</tt><tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">server_sock</tt><tt class="py-op">.</tt><tt id="link-4" class="py-name" targets="Method core.control.ps3_handler.PS3Handler.close()=core.control.ps3_handler.PS3Handler-class.html#close"><a title="core.control.ps3_handler.PS3Handler.close" class="py-name" href="#" onclick="return doclink('link-4', 'close', 'link-4');">close</a></tt><tt class="py-op">)</tt> </tt>
+</div><a name="L38"></a><tt class="py-lineno">38</tt>  <tt class="py-line"> </tt>
+<a name="L39"></a><tt class="py-lineno">39</tt>  <tt class="py-line">    <tt class="py-comment"># accept clients and create threads for them</tt> </tt>
+<a name="BluetoothServer.run"></a><div id="BluetoothServer.run-def"><a name="L40"></a><tt class="py-lineno">40</tt> <a class="py-toggle" href="#" id="BluetoothServer.run-toggle" onclick="return toggle('BluetoothServer.run');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="core.network.bluetooth_server.BluetoothServer-class.html#run">run</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="BluetoothServer.run-collapsed" style="display:none;" pad="++" indent="++++++++"></div><div id="BluetoothServer.run-expanded"><a name="L41"></a><tt class="py-lineno">41</tt>  <tt class="py-line">        <tt class="py-keyword">while</tt> <tt class="py-name">True</tt><tt class="py-op">:</tt> </tt>
+<a name="L42"></a><tt class="py-lineno">42</tt>  <tt class="py-line">            <tt class="py-keyword">print</tt><tt class="py-op">(</tt><tt class="py-string">"Waiting for connection on RFCOMM channel %d"</tt> <tt class="py-op">%</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">port</tt><tt class="py-op">)</tt> </tt>
+<a name="L43"></a><tt class="py-lineno">43</tt>  <tt class="py-line">            <tt class="py-name">client_sock</tt><tt class="py-op">,</tt> <tt class="py-name">client_info</tt> <tt class="py-op">=</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">server_sock</tt><tt class="py-op">.</tt><tt class="py-name">accept</tt><tt class="py-op">(</tt><tt class="py-op">)</tt>    <tt class="py-comment"># wait for connection. if new connection, continue</tt> </tt>
+<a name="L44"></a><tt class="py-lineno">44</tt>  <tt class="py-line">            <tt class="py-keyword">print</tt><tt class="py-op">(</tt><tt class="py-string">"Accepted connection from "</tt><tt class="py-op">,</tt> <tt class="py-name">client_info</tt><tt class="py-op">)</tt> </tt>
+<a name="L45"></a><tt class="py-lineno">45</tt>  <tt class="py-line">            <tt class="py-comment"># start client thread</tt> </tt>
+<a name="L46"></a><tt class="py-lineno">46</tt>  <tt class="py-line">            <tt id="link-5" class="py-name" targets="Class core.network.bluetooth_server.BluetoothClientThread=core.network.bluetooth_server.BluetoothClientThread-class.html"><a title="core.network.bluetooth_server.BluetoothClientThread" class="py-name" href="#" onclick="return doclink('link-5', 'BluetoothClientThread', 'link-5');">BluetoothClientThread</a></tt><tt class="py-op">(</tt><tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">server_sock</tt><tt class="py-op">,</tt> <tt class="py-name">client_sock</tt><tt class="py-op">,</tt> <tt class="py-name">client_info</tt><tt class="py-op">,</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">apphandler</tt><tt class="py-op">)</tt><tt class="py-op">.</tt><tt id="link-6" class="py-name" targets="Method core.network.wifi_server.WifiServer.start()=core.network.wifi_server.WifiServer-class.html#start"><a title="core.network.wifi_server.WifiServer.start" class="py-name" href="#" onclick="return doclink('link-6', 'start', 'link-6');">start</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt> </tt>
+</div></div><a name="L47"></a><tt class="py-lineno">47</tt>  <tt class="py-line"> </tt>
+<a name="L48"></a><tt class="py-lineno">48</tt>  <tt class="py-line"> </tt>
+<a name="BluetoothClientThread"></a><div id="BluetoothClientThread-def"><a name="L49"></a><tt class="py-lineno">49</tt> <a class="py-toggle" href="#" id="BluetoothClientThread-toggle" onclick="return toggle('BluetoothClientThread');">-</a><tt class="py-line"><tt class="py-keyword">class</tt> <a class="py-def-name" href="core.network.bluetooth_server.BluetoothClientThread-class.html">BluetoothClientThread</a><tt class="py-op">(</tt><tt class="py-base-class">Thread</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="BluetoothClientThread-collapsed" style="display:none;" pad="++" indent="++++"></div><div id="BluetoothClientThread-expanded"><a name="L50"></a><tt class="py-lineno">50</tt>  <tt class="py-line"> </tt>
+<a name="BluetoothClientThread.__init__"></a><div id="BluetoothClientThread.__init__-def"><a name="L51"></a><tt class="py-lineno">51</tt> <a class="py-toggle" href="#" id="BluetoothClientThread.__init__-toggle" onclick="return toggle('BluetoothClientThread.__init__');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="core.network.bluetooth_server.BluetoothClientThread-class.html#__init__">__init__</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">server_sock</tt><tt class="py-op">,</tt> <tt class="py-param">client_sock</tt><tt class="py-op">,</tt> <tt class="py-param">client_info</tt><tt class="py-op">,</tt> <tt class="py-param">apphandler</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="BluetoothClientThread.__init__-collapsed" style="display:none;" pad="++" indent="++++++++"></div><div id="BluetoothClientThread.__init__-expanded"><a name="L52"></a><tt class="py-lineno">52</tt>  <tt class="py-line">        <tt class="py-name">super</tt><tt class="py-op">(</tt><tt id="link-7" class="py-name"><a title="core.network.bluetooth_server.BluetoothClientThread" class="py-name" href="#" onclick="return doclink('link-7', 'BluetoothClientThread', 'link-5');">BluetoothClientThread</a></tt><tt class="py-op">,</tt> <tt class="py-name">self</tt><tt class="py-op">)</tt><tt class="py-op">.</tt><tt id="link-8" class="py-name"><a title="core.aranha.Aranha.__init__
+core.control.app_handler.AppHandler.__init__
+core.control.control_handler.ControlHandler.__init__
+core.control.control_interface.Control.__init__
+core.control.ps3_handler.PS3Handler.__init__
+core.network.bluetooth_server.BluetoothClientThread.__init__
+core.network.bluetooth_server.BluetoothServer.__init__
+core.network.network_handler.NetworkHandler.__init__
+core.network.wifi_server.WifiServer.__init__" class="py-name" href="#" onclick="return doclink('link-8', '__init__', 'link-3');">__init__</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt> </tt>
+<a name="L53"></a><tt class="py-lineno">53</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">daemon</tt> <tt class="py-op">=</tt> <tt class="py-name">True</tt> </tt>
+<a name="L54"></a><tt class="py-lineno">54</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">server_sock</tt> <tt class="py-op">=</tt> <tt class="py-name">server_sock</tt> </tt>
+<a name="L55"></a><tt class="py-lineno">55</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">client_sock</tt> <tt class="py-op">=</tt> <tt class="py-name">client_sock</tt> </tt>
+<a name="L56"></a><tt class="py-lineno">56</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">client_info</tt> <tt class="py-op">=</tt> <tt class="py-name">client_info</tt> </tt>
+<a name="L57"></a><tt class="py-lineno">57</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">apphandler</tt> <tt class="py-op">=</tt> <tt class="py-name">apphandler</tt> </tt>
+<a name="L58"></a><tt class="py-lineno">58</tt>  <tt class="py-line">        <tt class="py-name">atexit</tt><tt class="py-op">.</tt><tt class="py-name">register</tt><tt class="py-op">(</tt><tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">client_sock</tt><tt class="py-op">.</tt><tt id="link-9" class="py-name"><a title="core.control.ps3_handler.PS3Handler.close" class="py-name" href="#" onclick="return doclink('link-9', 'close', 'link-4');">close</a></tt><tt class="py-op">)</tt> </tt>
+<a name="L59"></a><tt class="py-lineno">59</tt>  <tt class="py-line">        <tt class="py-name">atexit</tt><tt class="py-op">.</tt><tt class="py-name">register</tt><tt class="py-op">(</tt><tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">server_sock</tt><tt class="py-op">.</tt><tt id="link-10" class="py-name"><a title="core.control.ps3_handler.PS3Handler.close" class="py-name" href="#" onclick="return doclink('link-10', 'close', 'link-4');">close</a></tt><tt class="py-op">)</tt> </tt>
+</div><a name="L60"></a><tt class="py-lineno">60</tt>  <tt class="py-line"> </tt>
+<a name="BluetoothClientThread.run"></a><div id="BluetoothClientThread.run-def"><a name="L61"></a><tt class="py-lineno">61</tt> <a class="py-toggle" href="#" id="BluetoothClientThread.run-toggle" onclick="return toggle('BluetoothClientThread.run');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="core.network.bluetooth_server.BluetoothClientThread-class.html#run">run</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="BluetoothClientThread.run-collapsed" style="display:none;" pad="++" indent="++++++++"></div><div id="BluetoothClientThread.run-expanded"><a name="L62"></a><tt class="py-lineno">62</tt>  <tt class="py-line">        <tt class="py-keyword">while</tt> <tt class="py-name">True</tt><tt class="py-op">:</tt> </tt>
+<a name="L63"></a><tt class="py-lineno">63</tt>  <tt class="py-line">            <tt class="py-keyword">try</tt><tt class="py-op">:</tt> </tt>
+<a name="L64"></a><tt class="py-lineno">64</tt>  <tt class="py-line">                <tt class="py-name">data</tt> <tt class="py-op">=</tt> <tt class="py-name">base64</tt><tt class="py-op">.</tt><tt class="py-name">b64decode</tt><tt class="py-op">(</tt><tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">client_sock</tt><tt class="py-op">.</tt><tt class="py-name">recv</tt><tt class="py-op">(</tt><tt class="py-number">1024</tt><tt class="py-op">)</tt><tt class="py-op">)</tt> </tt>
+<a name="L65"></a><tt class="py-lineno">65</tt>  <tt class="py-line">                <tt class="py-keyword">if</tt> <tt class="py-name">len</tt><tt class="py-op">(</tt><tt class="py-name">data</tt><tt class="py-op">)</tt> <tt class="py-op">==</tt> <tt class="py-number">0</tt><tt class="py-op">:</tt> </tt>
+<a name="L66"></a><tt class="py-lineno">66</tt>  <tt class="py-line">                    <tt class="py-keyword">break</tt> </tt>
+<a name="L67"></a><tt class="py-lineno">67</tt>  <tt class="py-line">                <tt class="py-name">thread</tt><tt class="py-op">.</tt><tt class="py-name">start_new_thread</tt><tt class="py-op">(</tt><tt id="link-11" class="py-name"><a title="core.network.protocol" class="py-name" href="#" onclick="return doclink('link-11', 'protocol', 'link-0');">protocol</a></tt><tt class="py-op">.</tt><tt id="link-12" class="py-name" targets="Function core.network.protocol.handle()=core.network.protocol-module.html#handle,Method core.network.wifi_server.WifiClientHandler.handle()=core.network.wifi_server.WifiClientHandler-class.html#handle"><a title="core.network.protocol.handle
+core.network.wifi_server.WifiClientHandler.handle" class="py-name" href="#" onclick="return doclink('link-12', 'handle', 'link-12');">handle</a></tt><tt class="py-op">,</tt> <tt class="py-op">(</tt><tt class="py-name">self</tt><tt class="py-op">,</tt> <tt class="py-name">data</tt><tt class="py-op">,</tt> <tt class="py-name">True</tt><tt class="py-op">)</tt><tt class="py-op">)</tt> </tt>
+<a name="L68"></a><tt class="py-lineno">68</tt>  <tt class="py-line">            <tt class="py-keyword">except</tt> <tt class="py-name">IOError</tt><tt class="py-op">:</tt> </tt>
+<a name="L69"></a><tt class="py-lineno">69</tt>  <tt class="py-line">                <tt class="py-keyword">break</tt> </tt>
+<a name="L70"></a><tt class="py-lineno">70</tt>  <tt class="py-line">        <tt class="py-comment"># close connection</tt> </tt>
+<a name="L71"></a><tt class="py-lineno">71</tt>  <tt class="py-line">        <tt class="py-keyword">print</tt><tt class="py-op">(</tt><tt class="py-string">"Closed connection from "</tt><tt class="py-op">,</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">client_info</tt><tt class="py-op">)</tt> </tt>
+<a name="L72"></a><tt class="py-lineno">72</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">client_sock</tt><tt class="py-op">.</tt><tt id="link-13" class="py-name"><a title="core.control.ps3_handler.PS3Handler.close" class="py-name" href="#" onclick="return doclink('link-13', 'close', 'link-4');">close</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt> </tt>
+<a name="L73"></a><tt class="py-lineno">73</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">is_alive</tt> <tt class="py-op">=</tt> <tt class="py-name">False</tt> </tt>
+</div><a name="L74"></a><tt class="py-lineno">74</tt>  <tt class="py-line"> </tt>
+<a name="BluetoothClientThread.encode_and_send"></a><div id="BluetoothClientThread.encode_and_send-def"><a name="L75"></a><tt class="py-lineno">75</tt> <a class="py-toggle" href="#" id="BluetoothClientThread.encode_and_send-toggle" onclick="return toggle('BluetoothClientThread.encode_and_send');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="core.network.bluetooth_server.BluetoothClientThread-class.html#encode_and_send">encode_and_send</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">header</tt><tt class="py-op">,</tt> <tt class="py-param">msg</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="BluetoothClientThread.encode_and_send-collapsed" style="display:none;" pad="++" indent="++++++++"></div><div id="BluetoothClientThread.encode_and_send-expanded"><a name="L76"></a><tt class="py-lineno">76</tt>  <tt class="py-line">        <tt class="py-name">msg</tt> <tt class="py-op">=</tt> <tt class="py-name">base64</tt><tt class="py-op">.</tt><tt class="py-name">b64encode</tt><tt class="py-op">(</tt><tt class="py-name">msg</tt><tt class="py-op">)</tt> </tt>
+<a name="L77"></a><tt class="py-lineno">77</tt>  <tt class="py-line">        <tt class="py-comment">#print "strlen msg:", len(msg)</tt> </tt>
+<a name="L78"></a><tt class="py-lineno">78</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">client_sock</tt><tt class="py-op">.</tt><tt class="py-name">send</tt><tt class="py-op">(</tt><tt class="py-name">header</tt> <tt class="py-op">+</tt> <tt class="py-string">""</tt> <tt class="py-op">+</tt> <tt class="py-name">str</tt><tt class="py-op">(</tt><tt class="py-name">len</tt><tt class="py-op">(</tt><tt class="py-name">msg</tt><tt class="py-op">)</tt><tt class="py-op">)</tt> <tt class="py-op">+</tt> <tt class="py-name">chr</tt><tt class="py-op">(</tt><tt class="py-number">0</tt><tt class="py-op">)</tt><tt class="py-op">)</tt> </tt>
+<a name="L79"></a><tt class="py-lineno">79</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">client_sock</tt><tt class="py-op">.</tt><tt class="py-name">send</tt><tt class="py-op">(</tt><tt class="py-name">msg</tt><tt class="py-op">)</tt> </tt>
+</div></div><a name="L80"></a><tt class="py-lineno">80</tt>  <tt class="py-line"> </tt><script type="text/javascript">
+<!--
+expandto(location.href);
+// -->
+</script>
+</pre>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="core-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+      <th class="navbar" width="100%"></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    Generated by Epydoc 3.0.1 on Fri Jun 13 11:33:38 2014
+    </td>
+    <td align="right" class="footer">
+      <a target="mainFrame" href="http://epydoc.sourceforge.net"
+        >http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie();
+  // -->
+</script>
+</body>
+</html>

@@ -12,7 +12,7 @@ class Ray(object):
     def getEndTile(self, tileSize, plusOne=True):
         rad = radians(self.rot)
         dist = self.dist + tileSize if plusOne else self.dist
-        (x, y) = self.pos
+        (x, y, temp) = self.pos
 
         x += sin(rad) * dist
         y += cos(rad) * dist
@@ -28,7 +28,7 @@ class Ray(object):
     def getPassableTiles(self, tileSize):
         "Bresenham's line algorithm"
 
-        (x0, y0) = self.pos
+        (x0, y0, temp) = self.pos
         (x1, y1) = self.getEndTile(tileSize, plusOne=False)
         x1+=1;  y1+=1
         tileList = []
@@ -60,6 +60,6 @@ class Ray(object):
         return tileList
 
 
-ray = Ray((5, 5), 15, 5)
-ray.getEndTile(1)
-ray.getPassableTiles(1)
+#ray = Ray((5, 5, 5), 15, 5)
+#ray.getEndTile(1)
+#ray.getPassableTiles(1)

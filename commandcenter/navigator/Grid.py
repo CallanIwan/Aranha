@@ -53,10 +53,10 @@ class Grid(object):
                 if self.grid[endx][y] & self.VISITED == False:
                     found = (endx, y)
 
-            validFound = self.isConnectedCountNot(found, connected, self.VISITED)
+            validFound = self.isConnectedCountNot(found, self.VISITED) >= connected
 
             if validFound == True:
-                return validFound
+                return found
 
         return None
 
@@ -64,17 +64,21 @@ class Grid(object):
     def isConnectedCountNot(self, pos, flag):
         return  9 - self.isConnectedCount(pos, flag)
 
+    def _and(self, x, flag):
+        val = x & flag
+        return 1 if val != 0 else 0
+
     def isConnectedCount(self, pos, flag):
         (x, y) = pos
         count = \
-            pos[x][y]         | flag + \
-            pos[x+1][y+1]     | flag + \
-            pos[x-1][y-1 ]    | flag + \
-            pos[x-1][y+1 ]    | flag + \
-            pos[x+1][y-1 ]    | flag + \
-            pos[x][y+1]       | flag + \
-            pos[x][y-1]       | flag + \
-            pos[x-1][y]       | flag + \
-            pos[x+1][y]       | flag
+           self._and(self.grid[x][y]    , flag) + \
+           self._and(self.grid[x+1][y+1], flag) + \
+           self._and(self.grid[x-1][y-1], flag) + \
+           self._and(self.grid[x-1][y+1], flag) + \
+           self._and(self.grid[x+1][y-1], flag) + \
+           self._and(self.grid[x][y+1]  , flag) + \
+           self._and(self.grid[x][y-1]  , flag) + \
+           self._and(self.grid[x-1][y]  , flag) + \
+           self._and(self.grid[x+1][y]  , flag)
 
         return count

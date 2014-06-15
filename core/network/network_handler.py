@@ -10,6 +10,11 @@ import wifi_server as ws
 class NetworkHandler():
 
     def __init__(self, apphandler):
+        """
+        Handles Network
+        @param apphandler: Handler object
+        @return: nothing
+        """
         self.apphandler = apphandler
         self.bts = bt.BluetoothServer(apphandler)
         self.ws = ws.WifiServer()
