@@ -4,6 +4,7 @@
 #include <math.h>
 #include <unistd.h>
 #include <vector>
+#include <iostream>
 
 #include "Globals.h"
 #include "Spider.h"
@@ -11,6 +12,7 @@
 #include "ComplexCommand.h"
 #include "SyncCommand.h"
 #include "VectorCommand.h"
+#include "SpiderMoveCommand.h"
 
 //Spider spider;
 
@@ -20,7 +22,6 @@ void isRoot()
 	{
 		printf("This program requires root privileges\n");
 	}
-
 }
 
 Vector3 GetVector()
@@ -32,59 +33,58 @@ Vector3 GetVector()
 	return vec;
 }
 #define G2R	(PI / 180)
-void SetLeg(Spider* spider, int index, int motorstart, float bodyLength, float legLength, float toeLength, float bodyOffset, float legOffset, float toeOffset, bool bodyInv, bool legInv, bool toeInv, Matrix modifier)
+void SetLeg(Spider* spider, int index, int motorstart, float bodyLength, float legLength, float toeLength, float bodyOffset, float legOffset, float toeOffset, bool bodyInv, bool legInv, bool toeInv, Vector3 position, float rotation)
 {
 	LegConfig config;
 	config.SetIndexes(motorstart + 0, motorstart + 1, motorstart + 2);
 	config.SetLength(bodyLength, legLength, toeLength);
 	config.SetOffsets(bodyOffset, legOffset, toeOffset);
 	config.SetReversed(bodyInv, legInv, toeInv);
-	SpiderLeg leg = SpiderLeg(spider, modifier, config);
-	spider->SetLeg(0, leg);
+	SpiderLeg leg = SpiderLeg(spider, position, rotation, config);
+	spider->SetLeg(index, leg);
 }
 
 void SpiderSetup(Spider* spider)
 {
-	int moff = 0;
 	float bl = 42.0;
 	float ll = 58.2;
 	float tl = 123.6;
-	/* FRONT LEFT LEG */
+	/* FRONT LEFT LEG / TESTING LEG */
 	SetLeg(spider, 0, 0,
 		bl, ll, tl,
-		0, -40, 0,
+		20, -80, 20,
 		true, true, false,
-		Matrix::CreateTranslation(100, 0, 0) * Matrix::CreateRotationY(90 * G2R));
+		Vector3(0, 0, 0), 0 * G2R);
 	/* FRONT RIGHT LEG */
 	SetLeg(spider, 1, 3,
 		bl, ll, tl,
 		0, -40, 0,
 		true, true, false,
-		Matrix::CreateTranslation(100, 0, 0) * Matrix::CreateRotationY(90 * G2R));
+		Vector3(100, 0, 0), 90 * G2R);
 	/* MIDDLE LEFT LEG */
 	SetLeg(spider, 2, 6,
 		bl, ll, tl,
 		0, -40, 0,
 		true, true, false,
-		Matrix::CreateTranslation(100, 0, 0) * Matrix::CreateRotationY(90 * G2R));
+		Vector3(100, 0, 0), 90 * G2R);
 	/* MIDDLE RIGHT LEG */
 	SetLeg(spider, 3, 9,
 		bl, ll, tl,
 		0, -40, 0,
 		true, true, false,
-		Matrix::CreateTranslation(100, 0, 0) * Matrix::CreateRotationY(90 * G2R));
+		Vector3(100, 0, 0), 90 * G2R);
 	/* BACK RIGHT LEG */
 	SetLeg(spider, 4, 12,
 		bl, ll, tl,
 		0, -40, 0,
 		true, true, false,
-		Matrix::CreateTranslation(100, 0, 0) * Matrix::CreateRotationY(90 * G2R));
+		Vector3(100, 0, 0), 90 * G2R);
 	/* BACK RIGHT LEG */
 	SetLeg(spider, 5, 15,
 		bl, ll, tl,
 		0, -40, 0,
 		true, true, false,
-		Matrix::CreateTranslation(100, 0, 0) * Matrix::CreateRotationY(90 * G2R));
+		Vector3(100, 0, 0), 90 * G2R);
 }
 
 int main(int argc, const char* argv[])
@@ -106,13 +106,15 @@ int main(int argc, const char* argv[])
 	spider->Print();
 
 	spider->GetSpiController()->Enable();
-
+	spider->GetSpiController()->SetAngle(0, 100, 100, true);
+	return 0;
+	/*
 	printf("\nTesting SyncCommand\n");
 
 	//Set all legs to 0 (instantly)
 	for (int i = 0; i < 18; i++)
 	{
-		spider->GetSpiController()->SetAngle(i, 0, 199, false);
+	spider->GetSpiController()->SetAngle(i, 0, 199, false);
 	}
 	usleep(1000 * 40);
 	//Create command before setting the motors
@@ -121,12 +123,15 @@ int main(int argc, const char* argv[])
 
 	for (int i = 0; i < 18; i++)
 	{
-		spider->GetSpiController()->SetAngle(i, 199, 1, false);
+	spider->GetSpiController()->SetAngle(i, 199, 1, false);
 	}
 	printf("All the legs are on their way\n");
 	//cmd.Execute(spider);
 	printf("All legs are now synchronized\n");
 
+	//*/
+
+	/*
 	printf("\nTesting ComplexCommand\n");
 
 	ComplexCommand complex = ComplexCommand();
@@ -143,7 +148,6 @@ int main(int argc, const char* argv[])
 	timeline0->push_back(new VectorCommand(0, Vector3::Forward() * 200));
 	timeline0->push_back(new SyncCommand(sync2));
 
-
 	timeline1->push_back(new VectorCommand(0, Vector3::Forward() * 50));
 	timeline1->push_back(new SyncCommand(sync1));
 	timeline1->push_back(new VectorCommand(0, Vector3::Forward() * 150));
@@ -151,11 +155,20 @@ int main(int argc, const char* argv[])
 	timeline1->push_back(new VectorCommand(0, Vector3::Forward() * 200));
 	timeline1->push_back(new SyncCommand(sync2));
 
-
 	complex.Print();
 
 	printf("\nStarting timeline now!\n");
 	complex.Execute(spider);
+	//*/
 
+	spider->GetLeg(0)->SetAngles(0, 0, PI / 2, true);
 
+	usleep(1000 * 1000 * 2);
+
+	VectorCommand relax = VectorCommand(0, Vector3(180, 0, 0));
+	relax.Execute(spider);
+
+	SpiderMoveCommand smc = SpiderMoveCommand(90 * G2R, 1);
+
+	smc.Execute(spider);
 }

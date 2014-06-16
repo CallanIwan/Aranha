@@ -56,12 +56,15 @@ float SpiController::GetAngle(int motor, LegConfig modifier, bool sync)
 void SpiController::SetAngle(int motor, int byteAngle, int speed, bool sync)
 {
 	char buffer[5] = { COMMAND_START, (int)motor, (int)byteAngle, (int)speed, COMMAND_ANGLE };
+	printf("Setting motor%i to %i (speed: %i)\n", motor, byteAngle, speed);
 	GetLock();
 	bcm2835_spi_writenb(buffer, 5);
 	FreeLock();
 	if (sync)
 	{
-		Synchronize(&motor,1);
+		int motors[1] = { motor };
+		printf("Debug: motorvalue: %i, first array element: %i\n",motor,motors[0]);
+		Synchronize(motors,1);
 	}
 }
 
@@ -152,6 +155,7 @@ void SpiController::Synchronize(int motors[], int amount)
 	while (!IsCompleted(motors,amount))
 	{
 		attempts++;
+		usleep(1000 * 10);
 	}
 	printf("Synced after %i attempts\n", attempts);
 }

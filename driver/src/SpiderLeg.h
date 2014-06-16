@@ -10,16 +10,18 @@ class SpiderLeg
 {
 private:
 	//The matrix that is able to manipulate global vectors into vectors relative to the
-	Matrix modifier;
+	Matrix modifier_translate;
+	Matrix modifier_rotate;
 	//The matrix that globalizes
-	Matrix modifier_inv;
+	Matrix modifier_inv_translate;
+	Matrix modifier_inv_rotate;
 	Spider* master;
 public:
 	LegConfig config;
 	//DO NOT USE THIS CONSTRUCTOR
 	SpiderLeg();
 	//USE THIS ONE
-	SpiderLeg(Spider* master, Matrix modifier, LegConfig configuration);
+	SpiderLeg(Spider* master, Vector3 position, float rotation, LegConfig configuration);
 	~SpiderLeg();
 
 	/**

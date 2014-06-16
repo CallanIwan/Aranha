@@ -15,14 +15,16 @@ SpiderLeg::SpiderLeg()
 
 }
 
-SpiderLeg::SpiderLeg(Spider* master, Matrix modifier, LegConfig config)
+SpiderLeg::SpiderLeg(Spider* master, Vector3 position, float rotation, LegConfig configuration)
 {
 	//Because we manipulate the origin raltive from the spiders' center,
 	//we need the inverse of that manipulation to localize points by, and
 	//the origional (double inverted) to globalize it
-	this->modifier = modifier.Inverse();
-	this->modifier_inv = modifier;//double inverse = current
-	this->config = config;
+	this->modifier_translate = Matrix::CreateTranslation(position * -1);
+	this->modifier_rotate = Matrix::CreateRotationY(rotation);
+	this->modifier_inv_translate = Matrix::CreateTranslation(position);
+	this->modifier_inv_rotate = Matrix::CreateRotationY(-rotation);
+	this->config = configuration;
 	this->master = master;
 }
 
@@ -35,9 +37,13 @@ void SpiderLeg::SetAngles(float body, float leg, float toe, bool sync)
 {
 	int bytes[3];
 	//Initial calculation
-	bytes[0] = body * (200 / PI);
-	bytes[1] = leg * (200 / PI);
-	bytes[2] = toe * (200 / PI);
+	bytes[0] = 100 + (body * (200 / PI));
+	bytes[1] = 100 + (leg * (200 / PI));
+	bytes[2] = (toe * (200 / PI));
+	//Offsets
+	bytes[0] += config.bodyOffset;
+	bytes[1] += config.legOffset;
+	bytes[2] += config.toeOffset;
 	for (int i = 0; i < 3; i++)
 	{
 		if (bytes[i] < 0)
@@ -52,14 +58,10 @@ void SpiderLeg::SetAngles(float body, float leg, float toe, bool sync)
 		bytes[1] = 199 - bytes[1];
 	if (config.toeReversed)
 		bytes[2] = 199 - bytes[2];
-	//Offsets
-	bytes[0] += config.bodyOffset;
-	bytes[1] += config.legOffset;
-	bytes[2] += config.toeOffset;
 	//Sending bytes
-	master->GetSpiController()->SetAngle(config.bodyIndex, bytes[0], 1, false);
+	master->GetSpiController()->SetAngle(config.bodyIndex, bytes[0], 2, false);
 	master->GetSpiController()->SetAngle(config.legIndex, bytes[1], 1, false);
-	master->GetSpiController()->SetAngle(config.toeIndex, bytes[2], 1, sync);
+	master->GetSpiController()->SetAngle(config.toeIndex, bytes[2], 2, sync);
 }
 void SpiderLeg::SetAngles(Vector3 target, bool sync)
 {
@@ -67,7 +69,7 @@ void SpiderLeg::SetAngles(Vector3 target, bool sync)
 	//Check if vector can be reached, NEEDS IMPROVEMENT
 	if (target.Length() > config.bodyLength + config.legLength + config.toeLength)
 	{
-		printf(TERM_RESET TERM_BOLD TERM_GREEN "SpiderLeg>" TERM_RESET " SetAngles(Vector3,bool) Error: target target is out of range\n");
+		printf(TERM_RESET TERM_BOLD TERM_GREEN "SpiderLeg>" TERM_RESET " SetAngles(Vector3,bool) Error: target target is out of range (&f)\n",target.Length());
 		return;
 	}
 
@@ -75,6 +77,7 @@ void SpiderLeg::SetAngles(Vector3 target, bool sync)
 
 	float planeDist = sqrt(target.x * target.x + target.z * target.z) - config.bodyLength;
 	float directLength = sqrt(planeDist * planeDist + target.y * target.y);
+	printf(TERM_BOLD TERM_GREEN "SpiderLeg>" TERM_RESET " Direct distance: %f\n",directLength);
 	float outerLegOffset = atan2(target.y, planeDist);
 	float legSquared = config.legLength * config.legLength;
 	float toeSquared = config.toeLength * config.toeLength;
@@ -115,20 +118,20 @@ void SpiderLeg::Synchronize()
 }
 Vector3 SpiderLeg::Localize(Vector3 worldVector)
 {
-	return Vector3::Transform(worldVector, modifier);
+	//First translate the point closer to the local space, then rotate it in the right direction
+	worldVector = Vector3::Transform(worldVector, modifier_translate);
+	return Vector3::Transform(worldVector, modifier_rotate);
 }
 Vector3 SpiderLeg::Globalize(Vector3 localVector)
 {
-	return Vector3::Transform(localVector, modifier_inv);
+	//First rotate the vector in the right direction, then shift it into place
+	localVector = Vector3::Transform(localVector, modifier_inv_rotate);
+	return Vector3::Transform(localVector, modifier_inv_translate);
 }
 
 void SpiderLeg::Print()
 {
-	std::cout << "SpiderLeg:\n";
-	std::cout << "Localizer:\n";
-	modifier.Print();
-	std::cout << "Globalizer:\n";
-	modifier_inv.Print();
+	printf("Rewrite this method\n");
 }
 
 /** REVERSE KINEMATICS - www.driehoekberekenen.be/cosinusregel.jsp
