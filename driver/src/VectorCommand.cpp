@@ -6,8 +6,6 @@
 #include "Spider.h"
 #include "SpiderLeg.h"
 
-
-
 /**
 Command for moving one leg to one specific vector (local to that leg)
 This command blocks the thread until the leg has reached the target
@@ -18,7 +16,6 @@ VectorCommand::VectorCommand(int legIndex, Vector3 target)
 	this->legIndex = legIndex;
 	this->target = target;
 }
-
 
 VectorCommand::~VectorCommand()
 {

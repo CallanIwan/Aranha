@@ -46,7 +46,6 @@ void SpiController::Disable()
 	bcm2835_close();
 }
 
-
 float SpiController::GetAngle(int motor, LegConfig modifier, bool sync)
 {
 	printf("Error: SpiController::GetAngle() is not yet implemented\n");
@@ -57,21 +56,21 @@ void SpiController::SetAngle(int motor, int byteAngle, int speed, bool sync)
 {
 	char buffer[5] = { COMMAND_START, (int)motor, (int)byteAngle, (int)speed, COMMAND_ANGLE };
 	printf("Setting motor%i to %i (speed: %i)\n", motor, byteAngle, speed);
-	GetLock();
+	mtx.lock();
 	bcm2835_spi_writenb(buffer, 5);
-	FreeLock();
+	mtx.unlock();
 	if (sync)
 	{
 		int motors[1] = { motor };
-		printf("Debug: motorvalue: %i, first array element: %i\n",motor,motors[0]);
-		Synchronize(motors,1);
+		printf("Debug: motorvalue: %i, first array element: %i\n", motor, motors[0]);
+		Synchronize(motors, 1);
 	}
 }
 
-#define _BUFSIZE 20
+#define _BUFSIZE 22
 int SpiController::GetCompleted(int* buffer)
 {
-	GetLock();
+	mtx.lock();
 	uint8_t received;
 	uint8_t msg = COMMAND_START;
 	int receivedcount = 0;
@@ -81,6 +80,7 @@ int SpiController::GetCompleted(int* buffer)
 		buffer[i] = 25;
 	}
 
+	//printf("Received:");
 	//Receive spi data
 	while (true)
 	{
@@ -92,6 +92,7 @@ int SpiController::GetCompleted(int* buffer)
 		{
 			buffer[receivedcount] = received;
 			receivedcount++;
+			//printf(" %2i", received);
 		}
 		//The received byte is a response to the first byte we send
 		if (received == COMMAND_START_RESPONSE)
@@ -99,14 +100,15 @@ int SpiController::GetCompleted(int* buffer)
 			enabled = true;
 		}
 	}
-	FreeLock();
+	//printf("\n");
+	mtx.unlock();
 	return receivedcount;
 }
 bool SpiController::IsCompleted(int motors[], int amount)
 {
-	GetLock();
+	mtx.lock();
 	//Get the list of completed motors
-	int buffer[18] = { 25 };
+	int buffer[_BUFSIZE] = { 25 };
 	int received = GetCompleted(&buffer[0]);
 
 	//Check if the list contains the requested motor
@@ -139,7 +141,7 @@ bool SpiController::IsCompleted(int motors[], int amount)
 			break;
 		}
 	}
-	FreeLock();
+	mtx.unlock();
 	return result;
 }
 void SpiController::Synchronize(int motors[], int amount)
@@ -152,7 +154,7 @@ void SpiController::Synchronize(int motors[], int amount)
 	printf("\n");
 
 	uint16_t attempts = 1;
-	while (!IsCompleted(motors,amount))
+	while (!IsCompleted(motors, amount))
 	{
 		attempts++;
 		usleep(1000 * 10);

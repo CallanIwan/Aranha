@@ -2,22 +2,28 @@
 #define HEADER_GUARD_SYNCLOCK
 
 #include "Globals.h"
+#include <mutex>
 
 class SyncLock
 {
 private:
+	int origionalLockLevel;
 	int lockLevel;
+	int unlocks;
+	bool completed;
+	std::mutex mtx;
+	bool IsCompleted();
 public:
 	SyncLock(int start);
 	~SyncLock();
 	//Increase the lock by a certain amount
-	virtual void Lock();
+	void Lock();
 	//Decrease the lock by 1
-	virtual void Unlock();
+	void Unlock();
 	//Gets the locklevel of a syncgroup
-	virtual int GetLockLevel();
+	int GetLockLevel();
 	//Block until the locklevel reaches 0
-	virtual void WaitForUnlock();
+	void WaitForUnlock();
 };
 
 #endif

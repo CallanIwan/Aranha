@@ -25,7 +25,6 @@ Matrix::Matrix(float m1, float m2, float m3, float m4,
 
 Matrix::~Matrix()
 {
-	
 }
 
 void Matrix::Print()

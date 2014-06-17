@@ -16,7 +16,6 @@ SpiderMoveCommand::SpiderMoveCommand(float direction, float distance)
 	this->distance = distance;
 }
 
-
 SpiderMoveCommand::~SpiderMoveCommand()
 {
 }
@@ -26,8 +25,27 @@ Vector3 lerp(Vector3 start, Vector3 finish, float progression)
 	return start + ((finish - start)*progression);
 }
 
-#define DIST_HOR	40
-#define DIST_VER	50
+#define DIST_HOR	30
+#define DIST_VER	40
+
+void GenerateLerp(int legindex, std::vector<ISpiderCommand*>* timeline, Vector3 start, Vector3 end, int steps)
+{
+	std::cout << "Lerp Start" << std::endl;
+	//Lerp to end position
+	for (float step = 0; step < steps; step++)
+	{
+		float progress = 1.0 / steps;
+		std::cout << "Progression " << progress << std::endl;
+		Vector3 vec = lerp(start, end, step);
+		timeline->push_back(new VectorCommand(legindex, vec));
+	}
+}
+
+bool IsPrimaryGroup(int legnum)
+{
+	return (legnum == 1 || legnum == 3 || legnum == 4);
+}
+
 void SpiderMoveCommand::Execute(Spider* spider)
 {
 	//Move legs to resting position
@@ -36,92 +54,69 @@ void SpiderMoveCommand::Execute(Spider* spider)
 	ComplexCommand fullstep;
 
 	//For each leg:
-	//Get resting pos (R)
-	SpiderLeg* leg = spider->GetLeg(0);
-
-	std::cout << TERM_RESET << TERM_BOLD << TERM_GREEN << "SpiderMoveCommand>" << TERM_RESET << " Creating frame\n";
-	std::cout << TERM_RESET << TERM_BOLD << TERM_GREEN << "SpiderMoveCommand>" << TERM_RESET << " Resting vector: ";
-	Vector3 r = Vector3(100, -100, 0);
-	r.Print();
-	//Globalize R
-	r = leg->Globalize(r);
-	std::cout << TERM_RESET << TERM_BOLD << TERM_GREEN << "SpiderMoveCommand>" << TERM_RESET << " Globalized: ";
-	r.Print();
-	//Draw frame around R in globalspace
-	Matrix rotation = Matrix::CreateRotationY(direction);
-
-	Vector3 a1 = r + Vector3::Transform((Vector3::Forward() * DIST_HOR), rotation);
-	Vector3 a2 = r + Vector3::Transform((Vector3::Forward() * DIST_HOR) + (Vector3::Up() * DIST_VER), rotation);
-	Vector3 b1 = r + Vector3::Transform((Vector3::Backward() * DIST_HOR) + (Vector3::Up() * DIST_VER), rotation);
-	Vector3 b2 = r + Vector3::Transform(Vector3::Backward() * DIST_HOR, rotation);
-
-	std::cout << TERM_RESET << TERM_BOLD << TERM_GREEN << "SpiderMoveCommand>" << TERM_RESET << " Rotation: " << direction * (180 / PI) << "\n";
-	std::cout << TERM_RESET << TERM_BOLD << TERM_GREEN << "SpiderMoveCommand>" << TERM_RESET << " A1: ";
-	a1.Print();
-	std::cout << TERM_RESET << TERM_BOLD << TERM_GREEN << "SpiderMoveCommand>" << TERM_RESET << " A2: ";
-	a2.Print();
-	std::cout << TERM_RESET << TERM_BOLD << TERM_GREEN << "SpiderMoveCommand>" << TERM_RESET << " B1: ";
-	b1.Print();
-	std::cout << TERM_RESET << TERM_BOLD << TERM_GREEN << "SpiderMoveCommand>" << TERM_RESET << " B2: ";
-	b2.Print();
-	//Localize all the points in the frame
-	a1 = leg->Localize(a1);
-	a2 = leg->Localize(a2);
-	b1 = leg->Localize(b1);
-	b2 = leg->Localize(b2);
-	std::cout << TERM_RESET << TERM_BOLD << TERM_GREEN << "SpiderMoveCommand>" << TERM_RESET << " Localized:\n";
-	std::cout << TERM_RESET << TERM_BOLD << TERM_GREEN << "SpiderMoveCommand>" << TERM_RESET << " A1: ";
-	a1.Print();
-	std::cout << TERM_RESET << TERM_BOLD << TERM_GREEN << "SpiderMoveCommand>" << TERM_RESET << " A2: ";
-	a2.Print();
-	std::cout << TERM_RESET << TERM_BOLD << TERM_GREEN << "SpiderMoveCommand>" << TERM_RESET << " B1: ";
-	b1.Print();
-	std::cout << TERM_RESET << TERM_BOLD << TERM_GREEN << "SpiderMoveCommand>" << TERM_RESET << " B2: ";
-	b2.Print();
-
-
-	//Generate Sync
-	std::vector<ISpiderCommand*>* groupA = fullstep.GetTimeline(0);
-	//Full cycle
-	groupA->push_back(new VectorCommand(0, r));
-	//R to A1
-	for (float i = 0; i < 1; i += 0.3)
+	for (int legindex = 0; legindex < GLOBAL_LEG_COUNT; legindex++)
 	{
-		printf("Progression Vector: ");
-		Vector3 vec = lerp(r, a1, i);
-		vec.Print();
-		groupA->push_back(new VectorCommand(0, vec));
-	}
-	float inc = 1;
-	for (int j = 0; j < 10; j++)
-	{
-		//A1 to A2
-		for (float i = 0; i < 1; i += inc)
-		{
-			Vector3 vec = lerp(a1, a2, i);
-			groupA->push_back(new VectorCommand(0, vec));
-		}
-		//A2 to B1
-		for (float i = 0; i < 1; i += inc)
-		{
-			Vector3 vec = lerp(a2, b1, i);
-			groupA->push_back(new VectorCommand(0, vec));
-		}
-		//B1 to B2
-		for (float i = 0; i < 1; i += inc)
-		{
-			Vector3 vec = lerp(b1, b2, i);
-			groupA->push_back(new VectorCommand(0, vec));
-		}
-		//B2 to A2
-		for (float i = 0; i < 1; i += inc)
-		{
-			Vector3 vec = lerp(b2, a1, i);
-			groupA->push_back(new VectorCommand(0, vec));
-		}
-	}
+		std::cout << "Generating for leg #" << legindex << std::endl;
+		//Get resting pos (R)
+		SpiderLeg* leg = spider->GetLeg(legindex);
+		Vector3 r = Vector3(100, -100, 0);
+		std::cout << "Resting position (local)  ";
+		r.Print();
+		//Globalize R
+		r = leg->Globalize(r);
+		std::cout << "Resting position (global) ";
+		r.Print();
 
-	scanf("%*s");
+		//Draw frame around R in globalspace
+		Matrix rotation = Matrix::CreateRotationY(direction);
+		Vector3 a1 = r + Vector3::Transform((Vector3::Forward() * DIST_HOR), rotation);
+		Vector3 a2 = r + Vector3::Transform((Vector3::Forward() * DIST_HOR) + (Vector3::Up() * DIST_VER), rotation);
+		Vector3 b1 = r + Vector3::Transform((Vector3::Backward() * DIST_HOR) + (Vector3::Up() * DIST_VER), rotation);
+		Vector3 b2 = r + Vector3::Transform(Vector3::Backward() * DIST_HOR, rotation);
+		//Localize all the points in the frame
+		a1 = leg->Localize(a1);
+		a2 = leg->Localize(a2);
+		b1 = leg->Localize(b1);
+		b2 = leg->Localize(b2);
+		std::cout << "Local A1";
+		a1.Print();
+		std::cout << "Local A2";
+		a2.Print();
+		std::cout << "Local B1";
+		b1.Print();
+		std::cout << "Local B2";
+		b2.Print();
+		//Get timeline
+		std::vector<ISpiderCommand*>* timeline = fullstep.GetTimeline(legindex);
+
+		SyncLock sync_all(5);
+		std::cout << "Timeline belongs to the ";
+		if (IsPrimaryGroup(legindex))
+		{
+			//Primary group starts at A1
+			std::cout << "primary";
+			timeline->push_back(new VectorCommand(legindex, a1));
+			timeline->push_back(new VectorCommand(legindex, a2));
+			timeline->push_back(new SyncCommand(&sync_all));
+			timeline->push_back(new VectorCommand(legindex, b1));
+			timeline->push_back(new VectorCommand(legindex, b2));
+			timeline->push_back(new SyncCommand(&sync_all));
+		}
+		else
+		{
+			//Secondary group starts at B1
+			std::cout << "secondary";
+			timeline->push_back(new VectorCommand(legindex, b1));
+			timeline->push_back(new VectorCommand(legindex, b2));
+			timeline->push_back(new SyncCommand(&sync_all));
+			timeline->push_back(new VectorCommand(legindex, a1));
+			timeline->push_back(new VectorCommand(legindex, a2));
+			timeline->push_back(new SyncCommand(&sync_all));
+		}
+		std::cout << " group" << std::endl;
+		//Full cycle
+		timeline->push_back(new VectorCommand(legindex, r));
+	}
 	//run command
 	fullstep.Execute(spider);
 }

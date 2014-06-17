@@ -3,14 +3,16 @@
 
 #include "Globals.h"
 #include <thread>
+#include <mutex>
 
 #include "ThreadLock.h"
 
-class SpiController : public ThreadLock
+class SpiController
 {
 private:
 	int lock;
 	std::thread::id owner;
+	std::recursive_mutex mtx;
 public:
 	SpiController();
 	~SpiController();

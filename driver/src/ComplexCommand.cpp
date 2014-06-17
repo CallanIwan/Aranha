@@ -8,9 +8,7 @@
 
 ComplexCommand::ComplexCommand()
 {
-
 }
-
 
 ComplexCommand::~ComplexCommand()
 {
@@ -35,10 +33,10 @@ std::vector<ISpiderCommand*>* ComplexCommand::GetTimeline(int group)
 
 void ComplexCommand::ExecuteTimeline(Spider* spider, std::vector<ISpiderCommand*> timeline, int syncgroup)
 {
-	printf(TERM_RESET TERM_BOLD TERM_GREEN "ComplexCommand>" TERM_RESET " WorkerThread created: (%i)\n",syncgroup);
+	printf(TERM_RESET TERM_BOLD TERM_GREEN "ComplexCommand>" TERM_RESET " WorkerThread created: (%i)\n", syncgroup);
 	for (int i = 0; i < timeline.size(); i++)
 	{
-		printf("(%i)Executing command ",syncgroup);
+		printf("(%i)Executing command ", syncgroup);
 		timeline.at(i)->Execute(spider);
 	}
 }
@@ -49,10 +47,10 @@ void ComplexCommand::Execute(Spider* spider)
 	int count = 0;
 	for (auto rit = timelines.crbegin(); rit != timelines.crend(); ++rit)
 	{
-		threads.push(std::thread(&ComplexCommand::ExecuteTimeline, this, spider,rit->second, rit->first));
+		threads.push(std::thread(&ComplexCommand::ExecuteTimeline, this, spider, rit->second, rit->first));
 		count++;
 	}
-	printf(TERM_RESET TERM_BOLD TERM_GREEN "ComplexCommand>" TERM_RESET " Created %i Threads\n",count);
+	printf(TERM_RESET TERM_BOLD TERM_GREEN "ComplexCommand>" TERM_RESET " Created %i Threads\n", count);
 	//Remove all threads
 	while (!threads.empty())
 	{
