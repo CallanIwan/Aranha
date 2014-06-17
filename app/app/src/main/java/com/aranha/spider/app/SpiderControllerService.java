@@ -19,7 +19,6 @@ public abstract class SpiderControllerService extends Service implements SpiderC
     public abstract void discoverDevices();
     public abstract void setCameraEnabled(MainActivity mainActivity, boolean value);
 
-
     /**
      * The activity which connects to this service can receive
      * messages by providing a Messenger as extra data when binding.
@@ -43,7 +42,7 @@ public abstract class SpiderControllerService extends Service implements SpiderC
                 e.printStackTrace();
             }
         } else {
-            Log.d(TAG, "Cannot send MSG to activity. Activity did not provide a Messenger!");
+            Log.d(TAG, "Cannot send MSG to activity. Activity did not provide a Messenger! " + message.toString());
         }
     }
 
@@ -67,7 +66,7 @@ public abstract class SpiderControllerService extends Service implements SpiderC
      */
     protected final IBinder mBinder = new SpiderControllerServiceBinder();
     public class SpiderControllerServiceBinder extends Binder {
-        SpiderControllerService getService() {
+        public SpiderControllerService getService() {
             return SpiderControllerService.this;
         }
     }

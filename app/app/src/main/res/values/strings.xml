@@ -16,6 +16,6 @@
     <string name="title_activity_bluetooth_discover_devices">BluetoothDiscoverDevicesActivity</string>
     <string name="select_bluetooth_device">Select the raspberry Pi from this list</string>
     <string name="title_activity_connection_type">ConnectionTypeActivity</string>
-    <string name="title_activity_connection_select">ConnectionSelect</string>
+    <string name="title_activity_connection_select">Select Connection Type</string>
 
 </resources>

@@ -66,7 +66,10 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
     static Class<? extends SpiderControllerService> spiderControllerServiceType;
     static boolean sIsConnectedToService = false;
     static ImageView sImageView = null;
+    public boolean isCameraEnabled = false;
+    public boolean isWifiCameraSetup = false;
     static String sScriptList = null;
+    Class<? extends SpiderControllerService> mSelectedConnectServiceClass;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -134,7 +137,7 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
         super.onResume();
 
         if(mViewPager.getCurrentItem() == 0) {
-            setCameraEnabled(true);
+            //setCameraEnabled(true);
         }
     }
 
@@ -142,7 +145,7 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
     protected void onStop() {
         super.onStop();
 
-        setCameraEnabled(false);
+        //setCameraEnabled(false);
         if (sIsConnectedToService) { // Unbind from the service
             unbindService(mConnection);
             sIsConnectedToService = false;
@@ -151,6 +154,7 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
 
     public void bindToService(Class<? extends SpiderControllerService> serviceClass) {
         if(!sIsConnectedToService) {
+            mSelectedConnectServiceClass = serviceClass;
             Intent intent = new Intent(this, serviceClass);
             bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
         }
@@ -205,44 +209,66 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
 
                 case CONNECTION_CLOSED:
                 case CONNECTION_LOST:
-                    startActivity(new Intent(MainActivity.this, ConnectActivity.class));
-                    Toast.makeText(MainActivity.this, "Lost Connection to the spider!", Toast.LENGTH_LONG).show();
+                    Intent connectActivity;
+
+                    if(mSelectedConnectServiceClass != null) {
+                        //connectActivity = new Intent(MainActivity.this, ConnectActivity.class);
+                        //connectActivity.putExtra("ServiceClass", mSelectedConnectServiceClass.getName());
+                        connectActivity = new Intent(MainActivity.this, ConnectionSelect.class);
+                    }else {
+                        connectActivity = new Intent(MainActivity.this, ConnectionSelect.class);
+                    }
+                    startActivity(connectActivity);
+                    Toast.makeText(MainActivity.this, "Lost Connection to the spider!", Toast.LENGTH_SHORT).show();
                     break;
 
             }
         }
     }
 
+    public void toggleCameraEnabled() {
+        setCameraEnabled(!isCameraEnabled);
+    }
     public void setCameraEnabled(boolean value) {
-        Log.d(TAG,"Activering cameraboi");
+        Log.d(TAG,"setCameraEnabled( " + value + " )");
         if(sSpiderControllerService != null)
             sSpiderControllerService.setCameraEnabled(this, value);
     }
 
     static MjpegView imageSurfaceView;
 
-    public void initWifiCamera() {
-        imageSurfaceView.setVisibility(View.VISIBLE);
-        imageSurfaceView.setDisplayMode(MjpegView.SIZE_BEST_FIT);
-        String URL = "http://10.0.0.2:8080/?action=stream&d=.mjpeg";
+    public void setWifiCameraStreamEnabled(boolean value) {
+        if(!value) {
+            if(imageSurfaceView != null)
+                imageSurfaceView.stopPlayback();
+            return;
+        }
 
-        // Get an inputstream for the camera. THis has to be executed on a seperate thread because
-        // it's not allowed to do internet stuff on the main UI thread.
-        (new AsyncTask<String, MjpegInputStream, MjpegInputStream>() {
-            @Override
-            protected MjpegInputStream doInBackground(String... strings) {
-                return MjpegInputStream.read(strings[0]);
+        if(isWifiCameraSetup) {
+            isCameraEnabled = true;
+            imageSurfaceView.startPlayback();
+        }
+        else {
+            if (!isCameraEnabled) {
+
+                isCameraEnabled = true;
+                imageSurfaceView.setVisibility(View.VISIBLE);
+                imageSurfaceView.setDisplayMode(MjpegView.SIZE_BEST_FIT);
+                String URL = "http://10.0.0.2:8080/?action=stream&d=.mjpeg";
+
+                // Get an inputstream for the camera. THis has to be executed on a seperate thread because
+                // it's not allowed to do internet stuff on the main UI thread.
+                (new AsyncTask<String, MjpegInputStream, MjpegInputStream>() {
+                    @Override
+                    protected MjpegInputStream doInBackground(String... strings) {
+                        return MjpegInputStream.read(strings[0]);
+                    }
+
+                    protected void onPostExecute(MjpegInputStream result) {
+                        imageSurfaceView.setSource(result);
+                    }
+                }).execute(URL);
             }
-            protected void onPostExecute(MjpegInputStream result) {
-                imageSurfaceView.setSource(result);
-            }
-        }).execute(URL);
-    }
-    public void setWifiCameraEnabled(boolean value) {
-        if(imageSurfaceView != null) {
-            if (value)
-                imageSurfaceView.startPlayback();
-            //else  imageSurfaceView.stopPlayback();
         }
     }
 
@@ -257,7 +283,7 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
 
         switch(tab.getPosition()) {
             case 0:
-                setCameraEnabled(true);
+                //setCameraEnabled(true);
                 break;
             case 1:
                 setCameraEnabled(false);
@@ -400,7 +426,7 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
                 } else if (view.getId() == R.id.upArrowButton) {
                     sSpiderControllerService.send(SpiderInstruction.move, "0");
                 } else if (view.getId() == R.id.imageView) {
-                    setCameraEnabled(false);
+                    toggleCameraEnabled();
                 }
             }
         }
@@ -427,8 +453,13 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
             return true;
         }
         else if( id == R.id.action_disconnect) {
+            //startActivity(new Intent(MainActivity.this, ConnectionSelect.class));
             sSpiderControllerService.disconnect();
-            startActivity(new Intent(MainActivity.this, ConnectActivity.class));
+        }
+        else if( id == 16908332 /* Back button */ ) {
+            sSpiderControllerService.disconnect();
+            startActivity(new Intent(MainActivity.this, ConnectionSelect.class));
+            return true;
         }
 
         return super.onOptionsItemSelected(item);

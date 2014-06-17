@@ -14,24 +14,66 @@
         android:textAppearance="?android:attr/textAppearanceLarge"
         android:text="Select Connection type"
         android:id="@+id/textView"
-        android:layout_alignParentTop="true"
-        android:layout_centerHorizontal="true" />
-
-    <Button
-        android:layout_width="200dp"
-        android:layout_height="wrap_content"
-        android:text="Bluetooth"
-        android:id="@+id/bluetoothButton"
-        android:layout_below="@+id/textView"
+        android:layout_above="@+id/relativeLayout"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="44dp" />
+        android:layout_marginBottom="34dp"
+        android:visibility="gone"/>
 
-    <Button
-        android:layout_width="200dp"
+    <Space
+        android:layout_width="20px"
+        android:layout_height="20px"
+        android:layout_centerInParent="true"
+        android:id="@+id/centerSpace" />
+
+    <RelativeLayout
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Wifi"
-        android:id="@+id/wifiButton"
-        android:layout_below="@+id/bluetoothButton"
-        android:layout_alignLeft="@+id/bluetoothButton" />
+        android:gravity="center"
+        android:layout_centerVertical="true"
+        android:layout_toLeftOf="@id/centerSpace"
+        android:id="@+id/relativeLayout">
+
+        <ImageButton
+            android:layout_width="150dp"
+            android:layout_height="150dp"
+            android:id="@+id/bluetoothButton"
+            android:src="@drawable/bluetooth"
+            android:scaleType="fitCenter"
+            style="?android:borderlessButtonStyle" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:text="Bluetooth"
+            android:id="@+id/textView2"
+            android:layout_below="@+id/bluetoothButton"
+            android:layout_centerHorizontal="true"/>
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:layout_centerVertical="true"
+        android:layout_toRightOf="@id/centerSpace">
+
+        <ImageButton
+            android:layout_width="150dp"
+            android:layout_height="150dp"
+            android:id="@+id/wifiButton"
+            android:src="@drawable/wifi"
+            android:scaleType="fitCenter"
+            style="?android:borderlessButtonStyle" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:text="WiFi"
+            android:id="@+id/textView3"
+            android:layout_below="@id/wifiButton"
+            android:layout_centerHorizontal="true" />
+
+    </RelativeLayout>
 
 </RelativeLayout>

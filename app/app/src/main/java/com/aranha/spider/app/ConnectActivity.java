@@ -1,6 +1,7 @@
 package com.aranha.spider.app;
 
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.content.ComponentName;
 import android.content.Context;
@@ -21,6 +22,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -34,36 +36,28 @@ public class ConnectActivity extends ActionBarActivity implements View.OnClickLi
 
     private final int REQUEST_ENABLE_BLUETOOTH = 1;
 
-    private Button mConnectButton, mRefreshButton, mManualConnectButton;
-    private TextView mConnectedTextView;
-
     private EditText raspberryName;
 
     Class<? extends SpiderControllerService> mSelectedConnectServiceClass = BluetoothService.class;
     SpiderControllerService mConnectService;
     boolean mServiceIsConnected = false;
 
+    ProgressBar progressBar;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_connect);
-
-        // Get the UI Resources from the xml
-        mConnectButton = (Button)findViewById(R.id.connectButton);
-        mConnectButton.setOnClickListener(this);
-        mConnectButton.setEnabled(false);
-        mManualConnectButton = (Button)findViewById(R.id.manualConnectButton);
-        mManualConnectButton.setOnClickListener(this);
-        mConnectedTextView = (TextView)findViewById(R.id.connectedTextView);
-
-        mRefreshButton = (Button)findViewById(R.id.refreshButton);
-        mRefreshButton.setOnClickListener(this);
+        setContentView(R.layout.activity_connect_alt);
 
         raspberryName = (EditText)findViewById(R.id.raspberryName);
         raspberryName.addTextChangedListener(textwatcher);
-
         final ActionBar actionBar = getSupportActionBar();
         actionBar.setDisplayHomeAsUpEnabled(true);
+
+
+        progressBar = (ProgressBar)findViewById(R.id.progressBar);
+        progressBar.setMax(100);
+        progressBar.setProgress(50);
 
         try {
             String serviceClassString = getIntent().getStringExtra("ServiceClass");
@@ -106,8 +100,6 @@ public class ConnectActivity extends ActionBarActivity implements View.OnClickLi
     @Override
     protected void onStop() {
         super.onStop();
-
-        // Unbind from the service
         unbindService();
     }
 
@@ -153,8 +145,9 @@ public class ConnectActivity extends ActionBarActivity implements View.OnClickLi
             // Get the SpiderControllerService class via a Binder.
             mConnectService =  ((SpiderControllerService.SpiderControllerServiceBinder)service).getService();
             mConnectService.setActivityMessenger(mConnectServiceMessenger);
-            mConnectService.discoverDevices();
+
             mServiceIsConnected = true;
+            mConnectService.discoverDevices();
             Log.d(TAG, "Connect service is connected");
         }
 
@@ -175,22 +168,19 @@ public class ConnectActivity extends ActionBarActivity implements View.OnClickLi
 
             switch (SpiderController.SpiderMessages[msg.what]) {
                 case RASPBERRYPI_FOUND:
-                    mConnectedTextView.setText("Raspberry device found");
-                    mConnectButton.setEnabled(true);
+                    progressBar.setProgress(80);
                     break;
 
                 case CONNECTING_FAILED:
                     Toast.makeText(ConnectActivity.this, "Failed to connect to the spider!", Toast.LENGTH_LONG).show();
-                    mConnectedTextView.setText("Not connected");
-                    mConnectButton.setEnabled(false);
+                    progressBar.setProgress(0);
                     if(mServiceIsConnected)
                         mConnectService.discoverDevices();
                     break;
 
                 case CONNECTED_TO_RASPBERRYPI:
-                    mConnectedTextView.setText("Connected!");
-                    mConnectButton.setEnabled(false);
                     // Start the main controller screen
+                    progressBar.setProgress(100);
                     Intent mainActivityIntent = new Intent(new Intent(ConnectActivity.this, MainActivity.class));
                     mainActivityIntent.putExtra("ServiceClass", mSelectedConnectServiceClass.getName());
                     startActivity(mainActivityIntent);
@@ -199,8 +189,8 @@ public class ConnectActivity extends ActionBarActivity implements View.OnClickLi
 
                 case CONNECTION_CLOSED:
                 case CONNECTION_LOST:
-                    mConnectedTextView.setText("Not connected");
                     // Return to the first activity
+                    progressBar.setProgress(0);
                     if(mServiceIsConnected)
                         mConnectService.discoverDevices();
                     Toast.makeText(ConnectActivity.this, "Lost connection to the spider.", Toast.LENGTH_LONG).show();
@@ -212,12 +202,7 @@ public class ConnectActivity extends ActionBarActivity implements View.OnClickLi
     @Override
     public void onClick(View view) {
 
-        if(view.getId() == R.id.connectButton) {
-            if(mServiceIsConnected)
-                mConnectService.connect();
-            mConnectButton.setEnabled(false);
-        }
-        else if(view.getId() == R.id.refreshButton) {
+        if(view.getId() == R.id.refreshButton) {
             if(mServiceIsConnected) {
                 mConnectService.discoverDevices();
             }

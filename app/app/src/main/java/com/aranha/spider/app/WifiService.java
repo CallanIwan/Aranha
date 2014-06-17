@@ -75,8 +75,9 @@ public class WifiService  extends SpiderControllerService {
         Log.d(TAG, "Trying to connect to Wifi network: " + targetSSID);
         for(WifiConfiguration config : configList) {
             if(config.SSID.equals(targetSSID)) {
-                //unregisterWifiReceiver();
+
                 Log.d(TAG, "Connecting to Wifi network: " + targetSSID);
+                sendMessageToActivity(SpiderMessage.CONNECTING_TO_RASPBERRYPI);
                 return mWifiManager.enableNetwork(config.networkId, true);
             }
         }
@@ -269,9 +270,7 @@ public class WifiService  extends SpiderControllerService {
 
     @Override
     public void setCameraEnabled(MainActivity mainActivity, boolean value) {
-        //TODO:
-        if(value)
-            mainActivity.initWifiCamera();
+        mainActivity.setWifiCameraStreamEnabled(value);
     }
 
     @Override

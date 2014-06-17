@@ -8,21 +8,22 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageButton;
 
 import com.example.spider.app.R;
 
 public class ConnectionSelect extends Activity {
 
-    Button wifiButton;
-    Button bluetoothButton;
+    ImageButton wifiButton;
+    ImageButton bluetoothButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_connection_select);
 
-        wifiButton = (Button)findViewById(R.id.wifiButton);
-        bluetoothButton = (Button)findViewById(R.id.bluetoothButton);
+        wifiButton = (ImageButton)findViewById(R.id.wifiButton);
+        bluetoothButton = (ImageButton)findViewById(R.id.bluetoothButton);
 
         wifiButton.setOnClickListener(onClickListener);
         bluetoothButton.setOnClickListener(onClickListener);
