@@ -12,14 +12,10 @@
 Spider::Spider()
 {
 	commandQueue = std::queue<ISpiderCommand>();
-	//Initialize SPI
-	spiController = SpiController();
 }
-
 
 Spider::~Spider()
 {
-
 }
 bool Spider::SetLeg(int index, SpiderLeg newLeg)
 {
@@ -51,16 +47,18 @@ void Spider::Think()
 void Spider::Print()
 {
 	printf("Spider object debug report\n");
-	printf("Memory size: %i bytes\n",sizeof(*this));
+	printf("Memory size: %i bytes\n", sizeof(*this));
 	for (int i = 0; i < GLOBAL_LEG_COUNT; i++)
 	{
 		SpiderLeg* leg = GetLeg(i);
-		printf("Leg: %i [%p]\n", i,leg);
-		printf("    Memory size: %i bytes\n",sizeof(*leg));
+		printf("Leg: %i [%p]\n", i, leg);
+		printf("    Memory size: %i bytes\n", sizeof(*leg));
 		Vector3 local = leg->Localize(Vector3::One());
-		printf("    Matrix::One (localize)\t{%8.2f,%8.2f,%8.2f}\n", local.x, local.y, local.z);
+		printf("    Localize  (Matrix::One)       {%8.2f,%8.2f,%8.2f}\n", local.x, local.y, local.z);
 		Vector3 global = leg->Globalize(Vector3::One());
-		printf("    Matrix::One (globalize)\t{%8.2f,%8.2f,%8.2f}\n", global.x, global.y, global.z);
+		printf("    Globalize (Matrix::One)       {%8.2f,%8.2f,%8.2f}\n", global.x, global.y, global.z);
+		Vector3 forward = leg->Globalize(Vector3(100, 0, 0));
+		printf("    Globalize (100 units forward) {%8.2f,%8.2f,%8.2f}\n", forward.x, forward.y, forward.z);
 	}
 }
 

@@ -16,6 +16,9 @@ private:
 	Matrix modifier_inv_translate;
 	Matrix modifier_inv_rotate;
 	Spider* master;
+	int currentBody;
+	int currentLeg;
+	int currentToe;
 public:
 	LegConfig config;
 	//DO NOT USE THIS CONSTRUCTOR

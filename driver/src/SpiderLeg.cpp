@@ -1,7 +1,6 @@
 #include "SpiderLeg.h"
 
 #include <iostream>
-#include <stdio.h>
 #include <unistd.h>
 #include <math.h>
 
@@ -12,7 +11,6 @@
 
 SpiderLeg::SpiderLeg()
 {
-
 }
 
 SpiderLeg::SpiderLeg(Spider* master, Vector3 position, float rotation, LegConfig configuration)
@@ -26,11 +24,13 @@ SpiderLeg::SpiderLeg(Spider* master, Vector3 position, float rotation, LegConfig
 	this->modifier_inv_rotate = Matrix::CreateRotationY(-rotation);
 	this->config = configuration;
 	this->master = master;
+	this->currentBody = 100;
+	this->currentLeg = 100;
+	this->currentToe = 100;
 }
 
 SpiderLeg::~SpiderLeg()
 {
-
 }
 
 void SpiderLeg::SetAngles(float body, float leg, float toe, bool sync)
@@ -58,10 +58,53 @@ void SpiderLeg::SetAngles(float body, float leg, float toe, bool sync)
 		bytes[1] = 199 - bytes[1];
 	if (config.toeReversed)
 		bytes[2] = 199 - bytes[2];
+	//Comparing last send bytes to calculate proper speeds
+	float bodyDelta = bytes[0] - currentBody;
+	float legDelta = bytes[1] - currentLeg;
+	float toeDelta = bytes[2] - currentToe;
+	//Calcuclate relative speeds
+	float bodyFact, legFact, toeFact;
+	std::cout << TERM_GREEN << "SpiderLeg>" << TERM_RESET << " Body delta: " << bodyDelta << std::endl;
+	std::cout << TERM_GREEN << "SpiderLeg>" << TERM_RESET << " Leg delta: " << legDelta << std::endl;
+	std::cout << TERM_GREEN << "SpiderLeg>" << TERM_RESET << " Toe delta: " << toeDelta << std::endl;
+	if (bodyDelta <= legDelta && bodyDelta <= toeDelta && bodyDelta != 0)
+	{
+		std::cout << TERM_GREEN << "SpiderLeg>" << TERM_RESET << " Dominant body" << std::endl;
+		bodyFact = 1.0;
+		legFact = legDelta / bodyDelta;
+		toeFact = toeDelta / bodyDelta;
+	}
+	else if (legDelta <= bodyDelta && legDelta <= toeDelta && legDelta != 0)
+	{
+		std::cout << TERM_GREEN << "SpiderLeg>" << TERM_RESET << " Dominant leg" << std::endl;
+		bodyFact = bodyDelta / legDelta;
+		legFact = 1.0;
+		toeFact = toeDelta / legDelta;
+	}
+	else if (toeDelta <= bodyDelta && toeDelta <= legDelta && toeDelta != 0)
+	{
+		std::cout << TERM_GREEN << "SpiderLeg>" << TERM_RESET << " Dominant toe" << std::endl;
+		bodyFact = bodyDelta / toeDelta;
+		legFact = legDelta / toeDelta;
+		toeFact = 1.0;
+	}
+
+	bodyFact *= 4;
+	legFact *= 4;
+	toeFact *= 4;
+
 	//Sending bytes
-	master->GetSpiController()->SetAngle(config.bodyIndex, bytes[0], 2, false);
-	master->GetSpiController()->SetAngle(config.legIndex, bytes[1], 1, false);
-	master->GetSpiController()->SetAngle(config.toeIndex, bytes[2], 2, sync);
+	master->GetSpiController()->SetAngle(config.bodyIndex, bytes[0], (int)bodyFact, false);
+	master->GetSpiController()->SetAngle(config.legIndex, bytes[1], (int)legFact, false);
+	master->GetSpiController()->SetAngle(config.toeIndex, bytes[2], (int)toeFact, false);
+	currentBody = bytes[0];
+	currentLeg = bytes[1];
+	currentToe = bytes[2];
+	if (sync)
+	{
+		int motors[3] = { config.bodyIndex, config.legIndex, config.toeIndex };
+		master->GetSpiController()->Synchronize(motors, 3);
+	}
 }
 void SpiderLeg::SetAngles(Vector3 target, bool sync)
 {
@@ -69,7 +112,7 @@ void SpiderLeg::SetAngles(Vector3 target, bool sync)
 	//Check if vector can be reached, NEEDS IMPROVEMENT
 	if (target.Length() > config.bodyLength + config.legLength + config.toeLength)
 	{
-		printf(TERM_RESET TERM_BOLD TERM_GREEN "SpiderLeg>" TERM_RESET " SetAngles(Vector3,bool) Error: target target is out of range (&f)\n",target.Length());
+		printf(TERM_RESET TERM_BOLD TERM_GREEN "SpiderLeg>" TERM_RESET " SetAngles(Vector3,bool) Error: target target is out of range (&f)\n", target.Length());
 		return;
 	}
 
@@ -77,15 +120,40 @@ void SpiderLeg::SetAngles(Vector3 target, bool sync)
 
 	float planeDist = sqrt(target.x * target.x + target.z * target.z) - config.bodyLength;
 	float directLength = sqrt(planeDist * planeDist + target.y * target.y);
-	printf(TERM_BOLD TERM_GREEN "SpiderLeg>" TERM_RESET " Direct distance: %f\n",directLength);
+	std::cout << TERM_GREEN << "SpiderLeg>" << TERM_RESET << " Direct distance: " << directLength << "\n";
+	if (directLength > (config.legLength + config.toeLength))
+	{
+		std::cout << "Warning: The vector is out of range, pulling it in\n";
+		directLength = config.legLength + config.toeLength;
+		//TODO CHANGE THIS TO WORK BETTER
+	}
 	float outerLegOffset = atan2(target.y, planeDist);
 	float legSquared = config.legLength * config.legLength;
 	float toeSquared = config.toeLength * config.toeLength;
 	float directSquared = directLength * directLength;
+	std::cout << TERM_GREEN << "SpiderLeg>" << TERM_RESET << " Body length: " << config.bodyLength << "\n";
+	std::cout << TERM_GREEN << "SpiderLeg>" << TERM_RESET << " Leg length: " << config.legLength << "\n";
+	std::cout << TERM_GREEN << "SpiderLeg>" << TERM_RESET << " Toe distance: " << config.toeLength << "\n";
 
 	float innerLegAngle = acos(-(toeSquared - directSquared - legSquared) / (2.0 * directLength * config.legLength));
 	float innerToeAngle = acos(-(directSquared - legSquared - toeSquared) / (2.0 * config.legLength * config.toeLength));
 	float groundAngle = acos(-(legSquared - directSquared - toeSquared) / (2.0 * directLength * config.toeLength));
+
+	if (isnan(innerLegAngle) || isnan(innerToeAngle) || isnan(groundAngle))
+	{
+		std::cout << TERM_GREEN << "SpiderLeg>" << TERM_RESET << " Warning: one of the angles turned NaN\n";
+		if (directLength < config.toeLength - config.legLength)
+		{
+			directLength = config.toeLength - config.legLength;
+		}
+		else if (directLength > config.toeLength + config.legLength)
+		{
+			directLength = config.toeLength + config.legLength;
+		}
+		innerLegAngle = acos(-(toeSquared - directSquared - legSquared) / (2.0 * directLength * config.legLength));
+		innerToeAngle = acos(-(directSquared - legSquared - toeSquared) / (2.0 * config.legLength * config.toeLength));
+		groundAngle = acos(-(legSquared - directSquared - toeSquared) / (2.0 * directLength * config.toeLength));
+	}
 
 	float legAngle = innerLegAngle + outerLegOffset;
 	float toeAngle = innerToeAngle;
