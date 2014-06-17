@@ -79,6 +79,7 @@ void SpiderMoveCommand::Execute(Spider* spider)
 	std::cout << TERM_RESET << TERM_BOLD << TERM_GREEN << "SpiderMoveCommand>" << TERM_RESET << " B2: ";
 	b2.Print();
 
+
 	//Generate Sync
 	std::vector<ISpiderCommand*>* groupA = fullstep.GetTimeline(0);
 	//Full cycle
