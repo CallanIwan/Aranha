@@ -19,8 +19,8 @@ import java.util.List;
 public class BluetoothService extends SpiderControllerService {
     private static final String TAG = "BluetoothService";
 
-    private boolean isConnected = false;
-    private boolean isTryingToConnect = false;
+    SocketState socketState = SocketState.DISCONNECTED;
+
     private BluetoothAdapter mBluetoothAdapter;
     private BluetoothDevice mRaspberryPiBluetoothDevice;
     private SpiderConnectionThread mSpiderConnectionThread;
@@ -75,7 +75,7 @@ public class BluetoothService extends SpiderControllerService {
             }
             else if(BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
 
-                if(!isConnected && !isTryingToConnect) {
+                if(socketState == SocketState.DISCONNECTED) {
                     Log.d(TAG, "Continue searching for device.");
                     discoverDevices();
                 }
@@ -108,8 +108,7 @@ public class BluetoothService extends SpiderControllerService {
                 case CONNECTED_TO_RASPBERRYPI:
                     if(msg.obj != null && msg.obj.getClass() == SpiderConnectionThread.class) {
                         mSpiderConnectionThread = (SpiderConnectionThread)msg.obj;
-                        isConnected = true;
-                        isTryingToConnect = false;
+                        socketState = SocketState.CONNECTED;
                         Log.d(TAG, "Bluetooth connection thread established");
                     }
                     sendMessageToActivity(SpiderMessage.CONNECTED_TO_RASPBERRYPI);
@@ -187,11 +186,11 @@ public class BluetoothService extends SpiderControllerService {
 
     @Override
     public void connect() {
-        if(!isConnected) {
-            isTryingToConnect = true;
+        if(socketState == SocketState.DISCONNECTED) {
             mBluetoothAdapter.cancelDiscovery();
             ConnectToSpiderThread btThread = new ConnectToSpiderThread(mRaspberryPiBluetoothDevice, mBluetoothConnectorMessenger);
             btThread.start();
+            socketState = SocketState.CONNECTING;
         }
     }
 
@@ -202,8 +201,7 @@ public class BluetoothService extends SpiderControllerService {
 
         mRaspberryPiBluetoothDevice = null;
         mSpiderConnectionThread = null;
-        isConnected = false;
-        isTryingToConnect = false;
+        socketState = SocketState.DISCONNECTED;
     }
 
     @Override

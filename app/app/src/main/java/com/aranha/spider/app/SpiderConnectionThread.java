@@ -190,7 +190,8 @@ public class SpiderConnectionThread extends Thread {
      */
     public void sendSpiderInstruction(SpiderInstruction instruction, String extraData) {
 
-        Log.d(TAG, "Sending instruction: " + instruction.toString());
+        //Log.d(TAG, "Sending instruction: " + instruction.toString());
+
         String finalString;
         if(extraData.length() == 0)
             finalString = instruction.toString();

@@ -29,9 +29,10 @@ public class WifiService  extends SpiderControllerService {
     public static String raspberryPwd = "paashaas";
     private SpiderConnectionThread mSpiderConnectionThread;
 
+    SocketState socketState = SocketState.DISCONNECTED;
+
     WifiManager mWifiManager;
     WifiConfiguration mWifiConfiguration = null;
-    private boolean isConnected = false;
 
     @Override
     public void onCreate() {
@@ -144,6 +145,9 @@ public class WifiService  extends SpiderControllerService {
      * Checks the current WifiScan list for the spider. Then connects to the network if it's there.
      */
     public void checkWifiListAndConnectToSpider() {
+        if(socketState == SocketState.CONNECTED)
+            return;
+
         List<ScanResult> wifiScanList = mWifiManager.getScanResults();
 
         for (int i = 0; i < wifiScanList.size(); i++) {
@@ -175,38 +179,36 @@ public class WifiService  extends SpiderControllerService {
 
             // Only do something when we are not yet connected.
             //
-            if(!isConnected) {
+            if (WifiManager.SCAN_RESULTS_AVAILABLE_ACTION.equals(action)) {
+                checkWifiListAndConnectToSpider();
+            } else if (WifiManager.WIFI_STATE_CHANGED_ACTION.equals(action)) {
 
-                if (WifiManager.SCAN_RESULTS_AVAILABLE_ACTION.equals(action)) {
+                int state = intent.getIntExtra(WifiManager.EXTRA_WIFI_STATE, WifiManager.WIFI_STATE_UNKNOWN);
+
+                if (state == WifiManager.WIFI_STATE_DISABLED) {
+                    Log.d(TAG, "State changed to disabled");
+                    socketState = SocketState.DISCONNECTED;
+
+                } else if (state == WifiManager.WIFI_STATE_ENABLED) {
+                    Log.d(TAG, "State changed to enabled");
                     checkWifiListAndConnectToSpider();
-                } else if (WifiManager.WIFI_STATE_CHANGED_ACTION.equals(action)) {
+                }
+            } else if (WifiManager.NETWORK_STATE_CHANGED_ACTION.equals(action)) {
 
-                    int state = intent.getIntExtra(WifiManager.EXTRA_WIFI_STATE, WifiManager.WIFI_STATE_UNKNOWN);
-
-                    if (state == WifiManager.WIFI_STATE_DISABLED) {
-                        Log.d(TAG, "State changed to disabled");
-                        isConnected = false;
-
-                    } else if (state == WifiManager.WIFI_STATE_ENABLED) {
-                        Log.d(TAG, "State changed to enabled");
-                        checkWifiListAndConnectToSpider();
-                    }
-                } else if (WifiManager.NETWORK_STATE_CHANGED_ACTION.equals(action)) {
-
-                    NetworkInfo nwInfo = intent.getParcelableExtra(WifiManager.EXTRA_NETWORK_INFO);
-                    if (NetworkInfo.State.CONNECTED.equals(nwInfo.getState())) {
-                        if (nwInfo.getExtraInfo().equals(raspberrySSID_quoted)) {
-                            connect();
-                        } else {
-                            isConnected = false;
-                            sendMessageToActivity(SpiderMessage.CONNECTION_CLOSED);
-                        }
-                    }
-                    else if (NetworkInfo.State.CONNECTING.equals(nwInfo.getState())) {
-                        Toast.makeText(WifiService.this, "Trying to connect to the spider", Toast.LENGTH_LONG).show();
+                NetworkInfo nwInfo = intent.getParcelableExtra(WifiManager.EXTRA_NETWORK_INFO);
+                if (NetworkInfo.State.CONNECTED.equals(nwInfo.getState())) {
+                    if (nwInfo.getExtraInfo().equals(raspberrySSID_quoted)) {
+                        connect();
+                    } else {
+                        socketState = SocketState.DISCONNECTED;
+                        sendMessageToActivity(SpiderMessage.CONNECTION_CLOSED);
                     }
                 }
+                else if (NetworkInfo.State.CONNECTING.equals(nwInfo.getState())) {
+                    Toast.makeText(WifiService.this, "Trying to connect to the spider", Toast.LENGTH_SHORT).show();
+                }
             }
+
         }
     };
 
@@ -223,7 +225,7 @@ public class WifiService  extends SpiderControllerService {
                 case CONNECTED_TO_RASPBERRYPI:
                     if(msg.obj != null && msg.obj.getClass() == SpiderConnectionThread.class) {
                         mSpiderConnectionThread = (SpiderConnectionThread)msg.obj;
-                        isConnected = true;
+                        socketState = SocketState.CONNECTED;
                         Log.d(TAG, "Wifi connection thread established");
                     }
                     sendMessageToActivity(SpiderMessage.CONNECTED_TO_RASPBERRYPI);
@@ -233,7 +235,7 @@ public class WifiService  extends SpiderControllerService {
                 case CONNECTION_CLOSED:
                 case CONNECTION_LOST:
                     mSpiderConnectionThread = null;
-                    isConnected = false;
+                    socketState = SocketState.DISCONNECTED;
                     sendMessageToActivity(spiderMsg);
                     break;
 
@@ -247,6 +249,7 @@ public class WifiService  extends SpiderControllerService {
                     break;
 
                 case READ_SCRIPT_LIST:
+                    Log.d(TAG, "Received script list");
                     sendMessageToActivity(SpiderMessage.READ_SCRIPT_LIST, msg.obj);
                     break;
             }
@@ -275,17 +278,19 @@ public class WifiService  extends SpiderControllerService {
 
     @Override
     public void connect() {
-        if(!isConnected) {
+        if(socketState == SocketState.DISCONNECTED) {
             ConnectToSpiderThread thread = new ConnectToSpiderThread(raspberryIP, raspberryPort, mWifiConnectionMessenger);
             thread.start();
+            socketState = SocketState.CONNECTING;
         }
     }
 
     @Override
     public void disconnect() {
-        if(isConnected) {
-            mWifiManager.disconnect();
-            isConnected = false;
+        if(socketState == SocketState.CONNECTED) {
+            mSpiderConnectionThread.cancel();
+            //mWifiManager.disconnect();
+            socketState = SocketState.DISCONNECTED;
         }
     }
 

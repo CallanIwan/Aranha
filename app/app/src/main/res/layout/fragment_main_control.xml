@@ -20,6 +20,43 @@
         android:layout_alignStart="@+id/downButton" />
 
     <Button
+        android:layout_width="100dp"
+        android:layout_height="60dp"
+        android:text="Reset"
+        android:id="@+id/resetButton"
+        android:layout_marginRight="31dp"
+        android:layout_above="@+id/upButton"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true" />
+
+    <Button
+        android:layout_width="100dp"
+        android:layout_height="60dp"
+        android:text="Down"
+        android:id="@+id/downButton"
+        android:layout_alignParentBottom="true"
+        android:layout_alignLeft="@+id/resetButton"
+        android:layout_alignStart="@+id/resetButton" />
+
+    <Button
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:text="↶"
+        android:id="@+id/leftRotateArrowButton"
+        android:layout_alignParentStart="false"
+        android:layout_alignTop="@+id/upArrowButton"
+        android:layout_toLeftOf="@id/upArrowButton"/>
+
+    <Button
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:text="↷"
+        android:id="@+id/rightRotateArrowButton"
+        android:layout_alignParentStart="false"
+        android:layout_alignTop="@+id/upArrowButton"
+        android:layout_toRightOf="@id/upArrowButton"/>
+
+    <Button
         android:layout_width="50dp"
         android:layout_height="50dp"
         android:text="←"
@@ -52,24 +89,7 @@
         android:layout_alignParentBottom="true"
         android:layout_toRightOf="@+id/leftArrowButton" />
 
-    <Button
-        android:layout_width="100dp"
-        android:layout_height="60dp"
-        android:text="Reset"
-        android:id="@+id/resetButton"
-        android:layout_marginRight="31dp"
-        android:layout_above="@+id/upButton"
-        android:layout_alignParentRight="true"
-        android:layout_alignParentEnd="true" />
 
-    <Button
-        android:layout_width="100dp"
-        android:layout_height="60dp"
-        android:text="Down"
-        android:id="@+id/downButton"
-        android:layout_alignParentBottom="true"
-        android:layout_alignLeft="@+id/resetButton"
-        android:layout_alignStart="@+id/resetButton" />
 
     <ImageView
         android:layout_width="320dp"

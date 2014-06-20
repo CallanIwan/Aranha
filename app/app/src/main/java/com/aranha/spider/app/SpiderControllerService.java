@@ -14,7 +14,11 @@ import android.util.Log;
 public abstract class SpiderControllerService extends Service implements SpiderController {
     private static final String TAG = "SpiderControllerService";
 
-
+    public enum SocketState {
+        DISCONNECTED,
+        CONNECTING,
+        CONNECTED
+    }
 
     public abstract void discoverDevices();
     public abstract void setCameraEnabled(MainActivity mainActivity, boolean value);

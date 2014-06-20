@@ -49,11 +49,6 @@
             android:theme="@android:style/Theme.NoTitleBar" >
         </activity>
 
-        <activity
-            android:name="com.aranha.spider.app.ConnectionTypeActivity"
-            android:label="@string/title_activity_connection_type" >
-        </activity>
-
 
         <service
             android:name="com.aranha.spider.app.BluetoothService"
