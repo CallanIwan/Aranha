@@ -13,7 +13,6 @@ private:
 	ComplexCommand first_half;
 	ComplexCommand second_half;
 	int state;
-	int steps;
 	float turn;
 	void GenerateTimelines(Spider* spider, float framewidth, float frameheight);
 	SyncLock* sync_half_pre;
@@ -25,7 +24,7 @@ public:
 	Creates a new turn command that will make the spider turn the given angle clockwise, supports negative for counterclockwise
 	Clamping will cause the spider turn to the given angle
 	*/
-	TurnCommand(float degrees, bool clamp);
+	TurnCommand(Spider* spider, float turnangle);
 	~TurnCommand();
 	void Execute(Spider* spider);
 };

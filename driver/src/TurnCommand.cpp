@@ -11,25 +11,16 @@
 #include "SyncCommand.h"
 #include "StabalizeCommand.h"
 
-TurnCommand::TurnCommand(float radianTurn, bool clamp)
+TurnCommand::TurnCommand(Spider* spider, float turnangle)
 {
 	//Clamps the rotation between -PI and PI
-	if (clamp)
-	{
-		while (radianTurn > PI)
-		{
-			radianTurn -= 2 * PI;
-		}
-		while (radianTurn < -PI)
-		{
-			radianTurn += 2 * PI;
-		}
-	}
-	this->turn = radianTurn;
+	this->turn = turnangle;
 	sync_half_pre = new SyncLock(GLOBAL_LEG_COUNT);
 	sync_half = new SyncLock(GLOBAL_LEG_COUNT);
 	sync_full_pre = new SyncLock(GLOBAL_LEG_COUNT);
 	sync_full = new SyncLock(GLOBAL_LEG_COUNT);
+	std::cout << TERM_RESET << TERM_BOLD << TERM_MAGENTA << "TurnCommand> " << TERM_RESET << "Generating timelines" << std::endl;
+	GenerateTimelines(spider, turnangle, 40);
 }
 
 TurnCommand::~TurnCommand()
@@ -105,22 +96,14 @@ void TurnCommand::GenerateTimelines(Spider* spider, float framerotation, float f
 
 void TurnCommand::Execute(Spider* spider)
 {
-	std::cout << TERM_RESET << TERM_BOLD << TERM_MAGENTA << "TurnCommand> " << TERM_RESET << "Generating timelines" << std::endl;
-	GenerateTimelines(spider, 20, 40);
-	while (true)
-	{
-		printf("Press enter to start first half of turn command");
-		scanf("%*c");
-		std::cout << TERM_RESET << TERM_BOLD << TERM_MAGENTA << "TurnCommand> " << TERM_RESET << "Half Step" << std::endl;
-		first_half.Execute(spider);
-		sync_half->Reset();
-		sync_half_pre->Reset();
-		printf("Press enter to start second half of turn command");
-		scanf("%*c");
-		std::cout << TERM_RESET << TERM_BOLD << TERM_MAGENTA << "TurnCommand> " << TERM_RESET << "Full Step" << std::endl;
-		second_half.Execute(spider);
-		sync_full->Reset();
-		sync_full_pre->Reset();
-	}
-	std::cout << TERM_RESET << TERM_BOLD << TERM_MAGENTA << "TurnCommand> " << TERM_RESET << "Executing timelines" << std::endl;
+	//First half of a single step
+	std::cout << TERM_RESET << TERM_BOLD << TERM_MAGENTA << "TurnCommand> " << TERM_RESET << "Half Step" << std::endl;
+	first_half.Execute(spider);
+	sync_half->Reset();
+	sync_half_pre->Reset();
+	//Second half of a single step
+	std::cout << TERM_RESET << TERM_BOLD << TERM_MAGENTA << "TurnCommand> " << TERM_RESET << "Full Step" << std::endl;
+	second_half.Execute(spider);
+	sync_full->Reset();
+	sync_full_pre->Reset();
 }

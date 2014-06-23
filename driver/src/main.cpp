@@ -208,7 +208,7 @@ int main(int argc, const char* argv[])
 	point = !point;
 	}
 	//*/
-
+	/*
 	printf("Press enter to execute stabalize command");
 	scanf("%*c");
 
@@ -217,17 +217,18 @@ int main(int argc, const char* argv[])
 	Vector3 destinations[6];
 	for (int i = 0; i < 6; i++)
 	{
-		SpiderLeg* leg = spider->GetLeg(i);
-		destinations[i] = leg->NeutralPosition + (Vector3::Forward() * 30);
+	SpiderLeg* leg = spider->GetLeg(i);
+	destinations[i] = leg->NeutralPosition + (Vector3::Forward() * 30);
 	}
 	StabalizeCommand sc = StabalizeCommand(destinations);
 	sc.Execute(spider);
+
+	//*/
 	//*
-	printf("Press enter to execute fullstep on leg");
-	scanf("%*c");
+
 	//Create destinations for all the legs, where they lay outwards from their starting positions
 	float distance = 160.0;
-	Vector3 origins[6];
+	Vector3 move_origins[6];
 	for (int i = 0; i < 6; i++)
 	{
 		SpiderLeg* leg = spider->GetLeg(i);
@@ -244,16 +245,30 @@ int main(int argc, const char* argv[])
 		origin = leg->Localize(origin);
 		std::cout << "Location of #" << i;
 		origin.Print();
-		origins[i] = origin;
+		move_origins[i] = origin;
 	}
 
-	TurnCommand tc = TurnCommand(90 * G2R, true);
-	tc.Execute(spider);
+	Vector3 turn_origins[6];
+	for (int i = 0; i < 6; i++)
+	{
+		turn_origins[i] = Vector3(150, -70, 0);
+	}
 
-	MoveCommand move1 = MoveCommand(spider, 90 * G2R, origins, 3);
-	move1.Execute(spider);
+	StabalizeCommand stabalize_turn = StabalizeCommand(turn_origins);
+	StabalizeCommand stabalize_move = StabalizeCommand(move_origins);
+	TurnCommand turn_clockwise = TurnCommand(spider, 15);
+	TurnCommand turn_counterclockwise = TurnCommand(spider, -15);
+	MoveCommand move_left = MoveCommand(spider, 90 * G2R, move_origins, 40, 3);
+	MoveCommand move_right = MoveCommand(spider, -90 * G2R, move_origins, 40, 3);
 
-	MoveCommand move2 = MoveCommand(spider, -90 * G2R, origins, 3);
-	move2.Execute(spider);
+	stabalize_move.Execute(spider);
+	move_left.Execute(spider);
+	move_left.Execute(spider);
+	move_left.Execute(spider);
+	stabalize_turn.Execute(spider);
+	turn_clockwise.Execute(spider);
+	turn_clockwise.Execute(spider);
+	turn_clockwise.Execute(spider);
+
 	//*/
 }

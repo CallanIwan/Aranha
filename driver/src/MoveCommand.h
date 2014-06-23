@@ -21,6 +21,7 @@ private:
 	ComplexCommand second_half;
 	int state;
 	int steps;
+	int stepsize;
 	//Direction to move in, 0 is forward, PI is backward, this scale is clockwise
 	float direction;
 	//Distance to move by, distance is in millimeters
@@ -33,7 +34,7 @@ private:
 	SyncLock* sync_full;
 public:
 	//Creates a new move command that moves in a given direction
-	MoveCommand(Spider* spider, float direction, Vector3 origins[6], int steps);
+	MoveCommand(Spider* spider, float direction, Vector3 origins[], int stepsize, int steps);
 	~MoveCommand();
 	void Execute(Spider* spider);
 };

@@ -11,7 +11,7 @@
 #include "SyncCommand.h"
 #include "StabalizeCommand.h"
 
-MoveCommand::MoveCommand(Spider* spider, float direction, Vector3 origins[], int steps)
+MoveCommand::MoveCommand(Spider* spider, float direction, Vector3 origins[], int stepsize, int steps)
 {
 	this->direction = direction;
 	std::cout << TERM_RESET << TERM_BOLD << TERM_MAGENTA << "MoveCommand> " << TERM_RESET "Origins:" << std::endl;
@@ -20,6 +20,7 @@ MoveCommand::MoveCommand(Spider* spider, float direction, Vector3 origins[], int
 		this->origins[i] = origins[i];
 		origins[i].Print();
 	}
+	this->stepsize = stepsize;
 	this->steps = steps;
 	//Generate walking pattern
 	sync_half_pre = new SyncLock(GLOBAL_LEG_COUNT);
@@ -36,8 +37,6 @@ MoveCommand::~MoveCommand()
 	delete sync_full;
 	delete sync_full_pre;
 }
-
-#define DIST_HOR	40
 #define DIST_VER	100
 
 void MoveCommand::GenerateTimelines(Spider* spider)
@@ -52,10 +51,10 @@ void MoveCommand::GenerateTimelines(Spider* spider)
 
 		//Draw frame around R in globalspace
 		r = leg->Globalize(r);
-		Vector3 a1 = r + Vector3::Transform((Vector3::Forward() * DIST_HOR), rotation);
-		Vector3 a2 = r + Vector3::Transform((Vector3::Forward() * DIST_HOR) + (Vector3::Up() * DIST_VER), rotation);
-		Vector3 b1 = r + Vector3::Transform((Vector3::Backward() * DIST_HOR) + (Vector3::Up() * DIST_VER), rotation);
-		Vector3 b2 = r + Vector3::Transform(Vector3::Backward() * DIST_HOR, rotation);
+		Vector3 a1 = r + Vector3::Transform((Vector3::Forward() * stepsize), rotation);
+		Vector3 a2 = r + Vector3::Transform((Vector3::Forward() * stepsize) + (Vector3::Up() * DIST_VER), rotation);
+		Vector3 b1 = r + Vector3::Transform((Vector3::Backward() * stepsize) + (Vector3::Up() * DIST_VER), rotation);
+		Vector3 b2 = r + Vector3::Transform(Vector3::Backward() * stepsize, rotation);
 
 		//Localize all the points in the frame
 		a1 = leg->Localize(a1);
@@ -100,10 +99,6 @@ void MoveCommand::GenerateTimelines(Spider* spider)
 
 void MoveCommand::Execute(Spider* spider)
 {
-	//Stabalize legs to ideal positions
-	StabalizeCommand sc = StabalizeCommand(origins);
-	sc.Execute(spider);
-	scanf("%*c");
 	//Perform fullstep untill no more steps can be taken
 	for (int i = 0; i < steps; i++)
 	{
