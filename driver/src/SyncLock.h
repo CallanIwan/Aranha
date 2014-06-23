@@ -9,7 +9,6 @@ class SyncLock
 private:
 	int origionalLockLevel;
 	int lockLevel;
-	int unlocks;
 	bool completed;
 	std::mutex mtx;
 	bool IsCompleted();
@@ -24,6 +23,8 @@ public:
 	int GetLockLevel();
 	//Block until the locklevel reaches 0
 	void WaitForUnlock();
+	//Resets the lock so it can be reused again
+	void Reset();
 };
 
 #endif

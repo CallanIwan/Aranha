@@ -1,5 +1,6 @@
 #include <bcm2835.h>
 #include <stdio.h>
+#include <iostream>
 #include <stdlib.h>
 #include <unistd.h>
 
@@ -55,14 +56,14 @@ float SpiController::GetAngle(int motor, LegConfig modifier, bool sync)
 void SpiController::SetAngle(int motor, int byteAngle, int speed, bool sync)
 {
 	char buffer[5] = { COMMAND_START, (int)motor, (int)byteAngle, (int)speed, COMMAND_ANGLE };
-	printf("Setting motor%i to %i (speed: %i)\n", motor, byteAngle, speed);
+	//printf("Setting motor%i to %i (speed: %i)\n", motor, byteAngle, speed);
 	mtx.lock();
 	bcm2835_spi_writenb(buffer, 5);
 	mtx.unlock();
 	if (sync)
 	{
 		int motors[1] = { motor };
-		printf("Debug: motorvalue: %i, first array element: %i\n", motor, motors[0]);
+		//printf("Debug: motorvalue: %i, first array element: %i\n", motor, motors[0]);
 		Synchronize(motors, 1);
 	}
 }
@@ -146,12 +147,12 @@ bool SpiController::IsCompleted(int motors[], int amount)
 }
 void SpiController::Synchronize(int motors[], int amount)
 {
-	printf("Syncing for:");
+	std::cout << TERM_RESET TERM_BOLD TERM_GREEN "SpiController> " TERM_RESET "Syncing for:";
 	for (int i = 0; i < amount; i++)
 	{
-		printf(" %i", motors[i]);
+		std::cout << ' ' << motors[i];
 	}
-	printf("\n");
+	std::cout << std::endl;
 
 	uint16_t attempts = 1;
 	while (!IsCompleted(motors, amount))
@@ -159,5 +160,5 @@ void SpiController::Synchronize(int motors[], int amount)
 		attempts++;
 		usleep(1000 * 10);
 	}
-	printf("Synced after %i attempts\n", attempts);
+	std::cout << TERM_RESET TERM_BOLD TERM_GREEN "SpiController> " TERM_RESET "Synced after " << attempts << " attempts" << std::endl;
 }

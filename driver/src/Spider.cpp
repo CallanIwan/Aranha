@@ -71,3 +71,8 @@ SpiController* Spider::GetSpiController()
 {
 	return &spiController;
 }
+
+bool Spider::IsPrimaryGroup(int legnum)
+{
+	return (legnum == 0 || legnum == 3 || legnum == 4);
+}

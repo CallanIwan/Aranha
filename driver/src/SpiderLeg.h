@@ -4,6 +4,7 @@
 #include "Globals.h"
 
 #include "Matrix.h"
+#include "Vector3.h"
 #include "LegConfig.h"
 
 class SpiderLeg
@@ -21,6 +22,8 @@ private:
 	int currentToe;
 public:
 	LegConfig config;
+	Vector3 CurrentPosition;
+	Vector3 NeutralPosition;
 	//DO NOT USE THIS CONSTRUCTOR
 	SpiderLeg();
 	//USE THIS ONE

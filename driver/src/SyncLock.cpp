@@ -8,7 +8,6 @@ SyncLock::SyncLock(int amount)
 	lockLevel = amount;
 	origionalLockLevel = amount;
 	completed = false;
-	unlocks = 0;
 }
 SyncLock::~SyncLock()
 {
@@ -23,16 +22,17 @@ void SyncLock::Lock()
 void SyncLock::Unlock()
 {
 	mtx.lock();
-	if (lockLevel > 0)
+	if (lockLevel > 1)
 	{
 		lockLevel--;
 	}
 	else
 	{
 		//In case the locklevel became negative
-		lockLevel = 0;
+		lockLevel = origionalLockLevel;
 		completed = true;
 	}
+	std::cout << TERM_RESET << TERM_BOLD << TERM_CYAN << "SyncLock> " << TERM_RESET << "Unlocked, current lock is " << lockLevel << std::endl;
 	mtx.unlock();
 }
 int SyncLock::GetLockLevel()
@@ -52,20 +52,17 @@ bool SyncLock::IsCompleted()
 
 void SyncLock::WaitForUnlock()
 {
+	Unlock();
 	while (!IsCompleted())
 	{
 		usleep(1000 * 20);
 	}
-	std::cout << "SyncLock Solved" << std::endl;
-	//Every thread that is being unlocked at this point will increase unlocks
+}
+
+void SyncLock::Reset()
+{
 	mtx.lock();
-	unlocks++;
-	//When the last thread increases unlocks,
-	if (unlocks >= origionalLockLevel)
-	{
-		std::cout << "SyncLock Reset" << std::endl;
-		completed = false;
-		lockLevel = origionalLockLevel;
-	}
+	lockLevel = origionalLockLevel;
+	completed = false;
 	mtx.unlock();
 }

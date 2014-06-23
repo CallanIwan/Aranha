@@ -33,6 +33,8 @@ public:
 
 	//Print all information to console, for debugging
 	void Print();
+	//Gets whether the given leg belongs to the primary or secondary group, true if primary, false otherwise
+	bool IsPrimaryGroup(int legindex);
 };
 
 #endif

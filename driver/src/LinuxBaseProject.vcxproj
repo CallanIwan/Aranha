@@ -70,23 +70,26 @@
     <ClCompile Include="ComplexCommand.cpp" />
     <ClCompile Include="LegConfig.cpp" />
     <ClCompile Include="LegPathCommand.cpp" />
+    <ClCompile Include="StabalizeCommand.cpp" />
     <ClCompile Include="SyncCommand.cpp" />
+    <ClCompile Include="TurnCommand.cpp" />
     <ClCompile Include="VectorCommand.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Matrix.cpp" />
     <ClCompile Include="SpiController.cpp" />
     <ClCompile Include="Spider.cpp" />
     <ClCompile Include="SpiderLeg.cpp" />
-    <ClCompile Include="SpiderMoveCommand.cpp" />
+    <ClCompile Include="MoveCommand.cpp" />
     <ClCompile Include="SyncLock.cpp" />
-    <ClCompile Include="ThreadLock.cpp" />
     <ClCompile Include="Vector3.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ForwardDeclarations.h" />
     <ClInclude Include="Globals.h" />
+    <ClInclude Include="TurnCommand.h" />
     <ClInclude Include="ISpiderCommand.h" />
     <ClInclude Include="ComplexCommand.h" />
+    <ClInclude Include="StabalizeCommand.h" />
     <ClInclude Include="SyncCommand.h" />
     <ClInclude Include="VectorCommand.h" />
     <ClInclude Include="SyncLock.h" />
@@ -96,8 +99,7 @@
     <ClInclude Include="SpiController.h" />
     <ClInclude Include="Spider.h" />
     <ClInclude Include="SpiderLeg.h" />
-    <ClInclude Include="SpiderMoveCommand.h" />
-    <ClInclude Include="ThreadLock.h" />
+    <ClInclude Include="MoveCommand.h" />
     <ClInclude Include="Vector3.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

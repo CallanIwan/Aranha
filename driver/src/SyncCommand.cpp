@@ -19,7 +19,6 @@ SyncLock* SyncCommand::GetSyncLock()
 
 void SyncCommand::Execute(Spider* spider)
 {
-	lock->Unlock();
 	std::cout << TERM_RESET << TERM_BOLD << TERM_CYAN << "SyncCommand> " << TERM_RESET << "Waiting for other locks to sync\n";
 	lock->WaitForUnlock();
 	std::cout << TERM_RESET << TERM_BOLD << TERM_CYAN << "SyncCommand> " << TERM_RESET << "SyncLock solved!\n";
