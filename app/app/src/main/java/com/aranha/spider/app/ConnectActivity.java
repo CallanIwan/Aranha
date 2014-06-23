@@ -58,6 +58,7 @@ public class ConnectActivity extends ActionBarActivity implements View.OnClickLi
         progressBar = (ProgressBar)findViewById(R.id.progressBar);
         progressBar.setMax(100);
         progressBar.setProgress(50);
+        progressBar.setOnClickListener(this);
 
         try {
             String serviceClassString = getIntent().getStringExtra("ServiceClass");
@@ -211,6 +212,9 @@ public class ConnectActivity extends ActionBarActivity implements View.OnClickLi
             if(mServiceIsConnected) {
                 // TODO:  mConnectService.manualConnect("00:15:83:6A:31:B7");
             }
+        }
+        else if(view.getId() == R.id.progressBar) {
+            mConnectService.discoverDevices();
         }
     }
 

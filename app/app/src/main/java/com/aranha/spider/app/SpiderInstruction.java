@@ -24,12 +24,19 @@ public enum SpiderInstruction {
         public String toString() { return "" + ((char) 5); }
     },
 
-
     /**
      *
      */
     requestCameraImage {
         public String toString() { return "" + ((char) 1);  }
+    },
+
+    requestSpiderInfo {
+        public String toString() { return "" + ((char) 2);  }
+    },
+
+    requestScriptList {
+        public String toString() { return "" + ((char) 3);  }
     },
 
     /**
@@ -45,19 +52,6 @@ public enum SpiderInstruction {
         public String toString() { return "" + ((char) 7);  }
     },
 
-
-
-    //
-    // TODO
-    ///
-    requestSpiderInfo {
-        public String toString() { return "" + ((char) 1111111);  }
-    },
-
-
-    requestScriptList {
-        public String toString() { return "" + ((char) 3);  }
-    },
     /**
      * Extra data:
      *      "<String>" = Name of one from the requested script list.
