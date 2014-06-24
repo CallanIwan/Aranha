@@ -103,10 +103,14 @@ void MoveCommand::Execute(Spider* spider)
 	for (int i = 0; i < steps; i++)
 	{
 		first_half.Execute(spider);
+		sync_half->Reset();
+		sync_half_pre->Reset();
 		i++;
 		if (i < steps)
 		{
 			second_half.Execute(spider);
+			sync_full->Reset();
+			sync_full_pre->Reset();
 		}
 		else
 		{

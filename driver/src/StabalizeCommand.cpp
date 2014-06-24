@@ -10,12 +10,13 @@
 #include "VectorCommand.h"
 #include "SyncCommand.h"
 
-StabalizeCommand::StabalizeCommand(Vector3 destinations[])
+StabalizeCommand::StabalizeCommand(Vector3 destinations[], bool middleFirst)
 {
 	for (int i = 0; i < GLOBAL_LEG_COUNT; i++)
 	{
 		this->destinations[i] = destinations[i];
 	}
+	this->middleFirst = middleFirst;
 }
 
 StabalizeCommand::~StabalizeCommand()
@@ -79,6 +80,20 @@ void StabalizeCommand::Execute(Spider* spider)
 	SyncLock* groupB = new SyncLock(6);
 	SyncLock* groupC = new SyncLock(6);
 
+	if (middleFirst)
+	{
+		//Move leg 2 and 3 to their destinations making 0 1 5 6 wait
+		timelines[0]->push_back(new SyncCommand(groupC));
+		timelines[1]->push_back(new SyncCommand(groupC));
+		timelines[4]->push_back(new SyncCommand(groupC));
+		timelines[5]->push_back(new SyncCommand(groupC));
+		PopulateTimeline(spider, timelines[2], 2, destinations[2]);
+		PopulateTimeline(spider, timelines[3], 3, destinations[3]);
+
+		timelines[2]->push_back(new SyncCommand(groupC));
+		timelines[3]->push_back(new SyncCommand(groupC));
+	}
+
 	//Move leg 0 and 5 to their destinations, making 1 2 3 4 wait
 	timelines[1]->push_back(new SyncCommand(groupA));
 	timelines[2]->push_back(new SyncCommand(groupA));
@@ -101,16 +116,19 @@ void StabalizeCommand::Execute(Spider* spider)
 	timelines[1]->push_back(new SyncCommand(groupB));
 	timelines[4]->push_back(new SyncCommand(groupB));
 
-	//Move leg 2 and 3 to their destinations making 0 1 5 6 wait
-	timelines[0]->push_back(new SyncCommand(groupC));
-	timelines[1]->push_back(new SyncCommand(groupC));
-	timelines[4]->push_back(new SyncCommand(groupC));
-	timelines[5]->push_back(new SyncCommand(groupC));
-	PopulateTimeline(spider, timelines[2], 2, destinations[2]);
-	PopulateTimeline(spider, timelines[3], 3, destinations[3]);
+	if (!middleFirst)
+	{
+		//Move leg 2 and 3 to their destinations making 0 1 5 6 wait
+		timelines[0]->push_back(new SyncCommand(groupC));
+		timelines[1]->push_back(new SyncCommand(groupC));
+		timelines[4]->push_back(new SyncCommand(groupC));
+		timelines[5]->push_back(new SyncCommand(groupC));
+		PopulateTimeline(spider, timelines[2], 2, destinations[2]);
+		PopulateTimeline(spider, timelines[3], 3, destinations[3]);
 
-	timelines[2]->push_back(new SyncCommand(groupC));
-	timelines[3]->push_back(new SyncCommand(groupC));
+		timelines[2]->push_back(new SyncCommand(groupC));
+		timelines[3]->push_back(new SyncCommand(groupC));
+	}
 
 	cc.Execute(spider);
 

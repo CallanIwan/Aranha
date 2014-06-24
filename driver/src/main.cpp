@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <vector>
 #include <iostream>
+#include <termios.h>
 
 #include "Globals.h"
 #include "Spider.h"
@@ -47,6 +48,22 @@ void SetLeg(Spider* spider, int index, int motorbody, int motorleg, int motortoe
 	SpiderLeg leg = SpiderLeg(spider, position, rotation, config);
 	leg.NeutralPosition = neutralPosition;
 	spider->SetLeg(index, leg);
+}
+
+int get_raw_char(void)
+{
+	int ch;
+	struct termios oldt, newt;
+	//Put terminal into raw mode
+	tcgetattr(STDIN_FILENO, &oldt);
+	newt = oldt;
+	newt.c_lflag &= ~(ICANON | ECHO);
+	tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+	//Get raw character
+	ch = getchar();
+	//Return terminal to normal
+	tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+	return ch;
 }
 
 void SpiderSetup(Spider* spider)
@@ -226,6 +243,9 @@ int main(int argc, const char* argv[])
 	//*/
 	//*
 
+	std::cout << "Press enter to start";
+	scanf("%*c");
+
 	//Create destinations for all the legs, where they lay outwards from their starting positions
 	float distance = 160.0;
 	Vector3 move_origins[6];
@@ -254,13 +274,13 @@ int main(int argc, const char* argv[])
 		turn_origins[i] = Vector3(150, -70, 0);
 	}
 
-	StabalizeCommand stabalize_turn = StabalizeCommand(turn_origins);
-	StabalizeCommand stabalize_move = StabalizeCommand(move_origins);
+	StabalizeCommand stabalize_turn = StabalizeCommand(turn_origins, false);
+	StabalizeCommand stabalize_move = StabalizeCommand(move_origins, true);
 	TurnCommand turn_clockwise = TurnCommand(spider, 15);
 	TurnCommand turn_counterclockwise = TurnCommand(spider, -15);
-	MoveCommand move_left = MoveCommand(spider, 90 * G2R, move_origins, 40, 3);
-	MoveCommand move_right = MoveCommand(spider, -90 * G2R, move_origins, 40, 3);
-
+	MoveCommand move_left = MoveCommand(spider, 90 * G2R, move_origins, 40, 2);
+	MoveCommand move_right = MoveCommand(spider, -90 * G2R, move_origins, 40, 2);
+	/*
 	stabalize_move.Execute(spider);
 	move_left.Execute(spider);
 	move_left.Execute(spider);
@@ -269,6 +289,66 @@ int main(int argc, const char* argv[])
 	turn_clockwise.Execute(spider);
 	turn_clockwise.Execute(spider);
 	turn_clockwise.Execute(spider);
+	move_left.Execute(spider);
+	move_left.Execute(spider);
+	move_left.Execute(spider);
+	*/
+	printf("Use the arrow keys to control the spider, pressing space will exit the program");
+	int mode = 0;
+	while (true)
+	{
+		//Read key
+		int input = -1;
+		//char inputchar = getchar();
+		input = get_raw_char();
+		//If key is space, exit
+		if (input == 32)
+		{
+			return 0;
+		}
+		//If key is 0-9 proceed
+		input -= 48;
+		if (input == 8)
+		{
+			//Forwards
+			if (mode != 1)
+			{
+				stabalize_move.Execute(spider);
+			}
+			move_left.Execute(spider);
+			mode = 1;
+		}
+		if (input == 2)
+		{
+			//Backwards
+			if (mode != 1)
+			{
+				stabalize_move.Execute(spider);
+			}
+			move_right.Execute(spider);
+			mode = 1;
+		}
+		if (input == 4)
+		{
+			//Counter-clockwise
+			if (mode != 2)
+			{
+				stabalize_turn.Execute(spider);
+			}
+			turn_counterclockwise.Execute(spider);
+			mode = 2;
+		}
+		if (input == 6)
+		{
+			//Clockwise
+			if (mode != 2)
+			{
+				stabalize_turn.Execute(spider);
+			}
+			turn_clockwise.Execute(spider);
+			mode = 2;
+		}
+	}
 
 	//*/
 }

@@ -15,9 +15,10 @@ class StabalizeCommand : public ISpiderCommand
 {
 private:
 	Vector3 destinations[GLOBAL_LEG_COUNT];
+	bool middleFirst;
 public:
 	//Creates a new stabalize command that puts the legs at the given coordinates
-	StabalizeCommand(Vector3 destinations[GLOBAL_LEG_COUNT]);
+	StabalizeCommand(Vector3 destinations[GLOBAL_LEG_COUNT], bool middleFirst);
 	~StabalizeCommand();
 	void Execute(Spider* spider);
 };
