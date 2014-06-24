@@ -485,7 +485,7 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
         }
     };
 
-    private static int SEND_RECURRING_INSTRUCTION_TIME = 400;
+    private static int SEND_RECURRING_INSTRUCTION_TIME = 1000;
     private SpiderInstruction currentInstruction;
     private String currentInstructionExtraData;
     private static Handler sendRecurringInstructionHandler = new Handler();
@@ -516,25 +516,25 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
             if (action == MotionEvent.ACTION_DOWN) {
                 if(mIsConnectedToService) {
                     if (view.getId() == R.id.leftArrowButton) {
-                        //mSpiderControllerService.send(SpiderInstruction.move, "270");
-                        sendRecurringInstruction(SpiderInstruction.move, "270");
+                        mSpiderControllerService.send(SpiderInstruction.move, "strafe;l");
+                        //sendRecurringInstruction(SpiderInstruction.move, "270");
                     } else if (view.getId() == R.id.rightArrowButton) {
-                        //mSpiderControllerService.send(SpiderInstruction.move, "90");
-                        sendRecurringInstruction(SpiderInstruction.move,  "90");
+                        mSpiderControllerService.send(SpiderInstruction.move, "strafe;r");
+                        //sendRecurringInstruction(SpiderInstruction.move,  "90");
                     } else if (view.getId() == R.id.downArrowButton) {
-                        //mSpiderControllerService.send(SpiderInstruction.move, "180");
-                        sendRecurringInstruction(SpiderInstruction.move, "180");
+                        mSpiderControllerService.send(SpiderInstruction.move, "180");
+                        //sendRecurringInstruction(SpiderInstruction.move, "180");
                     } else if (view.getId() == R.id.upArrowButton) {
-                       // mSpiderControllerService.send(SpiderInstruction.move, "0");
-                        sendRecurringInstruction(SpiderInstruction.move, "0");
+                        mSpiderControllerService.send(SpiderInstruction.move, "0");
+                        //sendRecurringInstruction(SpiderInstruction.move, "0");
                     } else if (view.getId() == R.id.imageView) {
                         toggleCameraEnabled();
                     } else if (view.getId() == R.id.leftRotateArrowButton) {
-                       // mSpiderControllerService.send(SpiderInstruction.move, "strafe;l");
-                        sendRecurringInstruction(SpiderInstruction.move, "strafe;l");
+                        mSpiderControllerService.send(SpiderInstruction.move, "270");
+                        //sendRecurringInstruction(SpiderInstruction.move, "strafe;l");
                     } else if (view.getId() == R.id.rightRotateArrowButton) {
-                        //mSpiderControllerService.send(SpiderInstruction.move, "strafe;r");
-                        sendRecurringInstruction(SpiderInstruction.move, "strafe;r");
+                        mSpiderControllerService.send(SpiderInstruction.move, "90");
+                        //sendRecurringInstruction(SpiderInstruction.move, "strafe;r");
                     } else if (view.getId() == R.id.resetButton) {
                         mSpiderControllerService.send(SpiderInstruction.relax);
                     } else if (view.getId() == R.id.upButton) {

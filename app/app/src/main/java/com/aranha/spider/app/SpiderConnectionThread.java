@@ -1,8 +1,6 @@
 package com.aranha.spider.app;
 
 import android.bluetooth.BluetoothSocket;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
