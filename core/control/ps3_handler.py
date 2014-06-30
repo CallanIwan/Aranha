@@ -73,12 +73,13 @@ class PS3Handler(ci.Control):
     E_ACTION = 5
     E_AXIS_VAL = 6
     E_BUTTON_VAL = 4
-    E_NAME =7
+    E_NAME = 7
 
     def __init__(self):
         super(PS3Handler, self).__init__()
         self.file = None
         self.isconnected = False
+        self.counted = 1
 
     # read from joystick file and put events into queue
     def run(self):
@@ -97,6 +98,19 @@ class PS3Handler(ci.Control):
                     for c in data:
                         event += ['%02X' % ord(c)]                      # input to hexadecimal, and add to array
                         if len(event) == 8:                             # if event is completely read
+                            if self.counted > 30:
+                                cmd = "move"
+                                move = int(event[self.E_NAME], 16)
+                                if move == 8:
+                                    self.cmd_queue.put((cmd, "0"))
+                                elif move == 9:
+                                    self.cmd_queue.put((cmd, "90"))
+                                elif move == 10:
+                                    self.cmd_queue.put((cmd, "180"))
+                                elif move == 11:
+                                    self.cmd_queue.put((cmd, "270"))
+                            self.counted += 1
+                            continue
                             # convert events to decimal value
                             axisval = int(event[self.E_AXIS_VAL], 16)   # axis value
                             action = int(event[self.E_ACTION], 16)      # action (button press)
@@ -176,8 +190,9 @@ class PS3Handler(ci.Control):
             action, value = self.poll()
             control_x = self.movementcontrol + "_x"     # the x-axis action
             control_y = self.movementcontrol + "_y"     # the y-axis action
-            if action[:7] == self.movementcontrol:      # filter on defined movementcontrol output
-                print action, " <=> ", value            # debug, action <=> value
+            #print action, " <=> ", value
+            #if action[:7] == self.movementcontrol:      # filter on defined movementcontrol output
+            #    print action, " <=> ", value            # debug, action <=> value
 
             """
             control_x = control + "_x"

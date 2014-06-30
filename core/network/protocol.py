@@ -18,6 +18,9 @@ H_VISION_MODUS = "" + chr(5)
 
 # receiving header bytes
 H_MOV_RECV = "" + chr(4)
+H_SPIDER_RELAX = "" + chr(6)
+H_SPIDER_UPDOWN = "" + chr(7)
+H_VISION_FROM_APP = "" + chr(8)
 
 # vision scripts
 H_VISION_COLORCARD = "" + chr(10)
@@ -25,13 +28,16 @@ H_VISION_COLORCARD_TX = "" + chr(11)
 H_VISION_BALLOON = "" + chr(12)
 H_VISION_OIL = "" + chr(13)
 
+# other
+H_CAM_ROTATE = "" + chr(20)
+
 # variables
 vision_modus = H_VISION_COLORCARD
 colorcard = []
 
 
 # handle the data that is received and send data back if necessary
-def handle(handler, data):
+def handle(handler, data, driver):
     global colorcard
     global vision_modus
 
@@ -48,20 +54,38 @@ def handle(handler, data):
             handler.encode_and_send(H_SENSOR, json_str)
             print "Sending sensor data"
         elif ord(data) is ord(H_VISION):
-            handler.encode_and_send(H_VISION, "Ballon vinden;Olie analyseren")
+            handler.encode_and_send(H_VISION, "kleurenkaart;ballon;olie")
             print "Sending vision scripts"
         elif ord(data) is ord(H_VISION_COLORCARD_TX):
             handler.encode_and_send(H_VISION_COLORCARD_TX, colorcard)
             print "Sending colorcard"
         elif ord(data) is ord(H_VISION_MODUS):
-            handler.encode_and_send(H_VISION_MODUS, vision_modus)
+            handler.encode_and_send(H_VISION_MODUS, "" + vision_modus)
+            print "sending vision modus"
     elif len(data) > 1:
         header = ord(data[0])
         if header is ord(H_MOV_RECV):
-            print "MOVE: " + data.split(";")[1]
+            cmd = data.split(";")[1]
+            if cmd == "strafe":
+                # not implemented in spider
+                print "STRAFE: " + data.split(";")[2]
+                if data.split(";")[2] == "r":
+                    driver.stabilize()
+            else:
+                print "MOVE: " + cmd
+                if cmd == "0":
+                    driver.move(0)
+                elif cmd == "90":
+                    driver.turn(1)
+                elif cmd == "180":
+                    driver.move(1)
+                elif cmd == "270":
+                    driver.turn(0)
         elif header is ord(H_VISION_COLORCARD):
-            colorcard = json.loads(data)[0]
-            vision_modus = H_VISION_COLORCARD
+            if colorcard != "null":
+                colorcard = data
+            vision_modus = H_VISION_BALLOON
+            handler.encode_and_send(H_VISION_BALLOON, "")
             print "COLOR ORDER: " + colorcard
         elif header is ord(H_VISION_BALLOON):
             vision_modus = H_VISION_BALLOON
@@ -69,6 +93,22 @@ def handle(handler, data):
         elif header is ord(H_VISION_OIL):
             vision_modus = H_VISION_OIL
             print "VISION OIL"
+        elif header is ord(H_VISION_FROM_APP):
+            cmd = data.split(";")[1]
+            if cmd == "kleurenkaart":
+                vision_modus = H_VISION_COLORCARD
+                handler.encode_and_send(H_VISION_COLORCARD, "")
+                print "start kleurenkaart"
+            elif cmd == "ballon":
+                vision_modus = H_VISION_BALLOON
+                handler.encode_and_send(H_VISION_BALLOON, "")
+                print "start ballon"
+            elif cmd == "olie":
+                vision_modus = H_VISION_OIL
+                handler.encode_and_send(H_VISION_OIL, "")
+                print "start olie"
+            elif cmd == "stop":
+                print "stop current vision script"
 
 
 def decode_json(json_str):

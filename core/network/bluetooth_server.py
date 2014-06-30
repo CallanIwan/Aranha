@@ -17,10 +17,11 @@ PACKET_SIZE = 990
 
 class BluetoothServer(Thread):
 
-    def __init__(self, apphandler):
+    def __init__(self, apphandler, driver):
         super(BluetoothServer, self).__init__()
         self.daemon = True                              # if main is killed, this also gets killed
         self.apphandler = apphandler                    # pass apphandler object so we can pass control commands to it
+        self.driver = driver
         self.server_sock = BluetoothSocket(RFCOMM)      # create socket
         self.server_sock.bind(("", PORT_ANY))           # bind to bluetooth adapter
         self.server_sock.listen(1)                      # server listens to accept 1 connection at a time
@@ -43,18 +44,19 @@ class BluetoothServer(Thread):
             client_sock, client_info = self.server_sock.accept()    # wait for connection. if new connection, continue
             print("Accepted connection from ", client_info)
             # start client thread
-            BluetoothClientThread(self.server_sock, client_sock, client_info, self.apphandler).start()
+            BluetoothClientThread(self.server_sock, client_sock, client_info, self.apphandler, self.driver).start()
 
 
 class BluetoothClientThread(Thread):
 
-    def __init__(self, server_sock, client_sock, client_info, apphandler):
+    def __init__(self, server_sock, client_sock, client_info, apphandler, driver):
         super(BluetoothClientThread, self).__init__()
         self.daemon = True
         self.server_sock = server_sock
         self.client_sock = client_sock
         self.client_info = client_info
         self.apphandler = apphandler
+        self.driver = driver
         atexit.register(self.client_sock.close)
         atexit.register(self.server_sock.close)
 
@@ -64,7 +66,7 @@ class BluetoothClientThread(Thread):
                 data = base64.b64decode(self.client_sock.recv(1024))
                 if len(data) == 0:
                     break
-                thread.start_new_thread(protocol.handle, (self, data, True))
+                thread.start_new_thread(protocol.handle, (self, data, self.driver))
             except IOError:
                 break
         # close connection
