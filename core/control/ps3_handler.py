@@ -8,10 +8,15 @@ import time
 import binascii
 
 # config flags
+#: Sixaxis byte.
 C_SIXAXIS = 0x01
+#: Analog stick byte.
 C_ANALOG_AXIS = 0x02
+#: Pressure byte.
 C_PRESSURE = 0x04
+#: Button pressed byte.
 C_PRESSED = 0x08
+#: Button released byte.
 C_RELEASED = 0x10
 
 # movement flags
@@ -24,16 +29,16 @@ MOV_INIT = "INIT"
 
 class PS3Handler(ci.Control):
 
-    # the control used for movement
+    #: The control used for movement
     movementcontrol = "L3_axis"
 
-    # sanitized state of the controller
+    #: Sanitized state of the controller
     movementstate = MOV_INIT
 
-    # speed
+    #: Speed
     movementspeed = 0
 
-    # ranges of x and y
+    # Ranges of x and y
     OUTER_RANGE = 30  # range of sides which is considered a move (deadzone)
     X_LEFT_L = 128
     X_LEFT_R = 255
@@ -44,14 +49,14 @@ class PS3Handler(ci.Control):
     Y_DOWN_UP = 0
     Y_DOWN_DOWN = 127
 
-    # boolean flags for checking if INIT state
+    # Boolean flags for checking if INIT state
     x_zero = False
     y_zero = False
 
-    # enable/disable config flags
+    # Enable/disable config flags
     config_flags = C_ANALOG_AXIS | C_PRESSURE | C_PRESSED
 
-    # byte 4 (value)
+    #: Byte 4 (value)
     JS_EVENT_BUTTON_RELEASED = 0x00
     JS_EVENT_BUTTON_PRESSED = 0x01
 
@@ -61,9 +66,10 @@ class PS3Handler(ci.Control):
     JS_EVENT_INIT = 0x80    # initial state of device
 
     # byte 7 (button (and axis) 'ids')
+    #: List of all the button names.
     button_names = ["select", "L3", "R3", "start", "up", "right", "down",
                     "left", "L2", "R2", "L1", "L2", "triangle", "circle", "cross", "square", "home"]
-
+    #: List of all the axis names.
     axis_names = ["L3_axis_x", "L3_axis_y", "R3_axis_x", "R3_axis_y",
                   "sixaxis_x", "sixaxis_y", "sixaxis_z", "7", "up_pressure", "right_pressure",
                   "down_pressure", "left_pressure", "L2_pressure", "R2_pressure", "L1_pressure",
@@ -73,15 +79,24 @@ class PS3Handler(ci.Control):
     E_ACTION = 5
     E_AXIS_VAL = 6
     E_BUTTON_VAL = 4
-    E_NAME =7
+    E_NAME = 7
 
     def __init__(self):
+        """
+        Init
+        @return:
+        """
         super(PS3Handler, self).__init__()
         self.file = None
         self.isconnected = False
+        self.counted = 1
 
     # read from joystick file and put events into queue
     def run(self):
+        """
+        Open and read joystick file. Read events from it and sanitize commands and put them in a queue, which are handled by control_handler.
+        @return:
+        """
         while True:
             if not self.isconnected:
                 try:
@@ -97,6 +112,19 @@ class PS3Handler(ci.Control):
                     for c in data:
                         event += ['%02X' % ord(c)]                      # input to hexadecimal, and add to array
                         if len(event) == 8:                             # if event is completely read
+                            if self.counted > 30:
+                                cmd = "move"
+                                move = int(event[self.E_NAME], 16)
+                                if move == 8:
+                                    self.cmd_queue.put((cmd, "0"))
+                                elif move == 9:
+                                    self.cmd_queue.put((cmd, "90"))
+                                elif move == 10:
+                                    self.cmd_queue.put((cmd, "180"))
+                                elif move == 11:
+                                    self.cmd_queue.put((cmd, "270"))
+                            self.counted += 1
+                            continue
                             # convert events to decimal value
                             axisval = int(event[self.E_AXIS_VAL], 16)   # axis value
                             action = int(event[self.E_ACTION], 16)      # action (button press)
@@ -132,52 +160,99 @@ class PS3Handler(ci.Control):
             return self.cmd_queue.get()
         return False
 
-    # close joystick file
     def close(self):
+        """
+        close joystick file
+        """
         self.file.close()
 
     def isbutton(self, c):
+        """
+        Checks if c is a button.
+        @param c: object to check.
+        @return: boolean
+        """
         return (c & self.JS_EVENT_BUTTON) != 0
 
     def isaxis(self, c):
+        """
+        Checks if c is a Axis.
+        @param c: object to check.
+        @return: boolean
+        """
         return (c & self.JS_EVENT_AXIS) != 0
 
     def isinitialstate(self, c):
+        """
+        Checks if the object is a initial state.
+        @param c: object to check.
+        @return: boolean
+        """
         return (c & self.JS_EVENT_INIT) != 0
 
     def ispressed(self, c):
+        """
+        Checks if the object is pressed.
+        @param c: object to check.
+        @return: boolean
+        """
         if not self.config_flags & C_PRESSED:
             return False
         return (c & self.JS_EVENT_BUTTON_PRESSED) != 0
 
     def isreleased(self):
+        """
+        Checks if the object is released.
+        @param c: object to check.
+        @return: boolean
+        """
         if not self.config_flags & C_RELEASED:
             return False
         return True
 
     def ispressure(self, c):
+        """
+        Checks if the object is pressured.
+        @param c: object to check.
+        @return: boolean
+        """
         if not self.config_flags & C_PRESSURE:
             return False
         return 8 <= c <= 19     # 8 to 19 are pressure events
 
     def isanalogaxis(self, c):
+        """
+        Checks if the object is a analog axis.
+        @param c: object to check.
+        @return: boolean
+        """
         if not self.config_flags & C_ANALOG_AXIS:
             return False
         return 0 <= c <= 3      # 0 tot 3 are analog axis events
 
     def issixaxis(self, c):
+        """
+        Checks if the object is six axis.
+        @param c: object to check.
+        @return: boolean
+        """
         if not self.config_flags & C_SIXAXIS:
             return False
         return 4 <= c <= 6      # 4 to 6 are sixaxis events (x, y and z)
 
     # return movementstate, movementstate is calculated in this function
     def getmovementstate(self):
+        """
+
+        @return:
+        """
         for x in range(0, self.cmd_queue.qsize()):
             action, value = self.poll()
             control_x = self.movementcontrol + "_x"     # the x-axis action
             control_y = self.movementcontrol + "_y"     # the y-axis action
-            if action[:7] == self.movementcontrol:      # filter on defined movementcontrol output
-                print action, " <=> ", value            # debug, action <=> value
+            #print action, " <=> ", value
+            #if action[:7] == self.movementcontrol:      # filter on defined movementcontrol output
+            #    print action, " <=> ", value            # debug, action <=> value
 
             """
             control_x = control + "_x"

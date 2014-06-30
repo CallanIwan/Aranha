@@ -8,15 +8,21 @@ from threading import Thread
 import time
 from network import network_handler
 from control import control_handler
+import driver
 
 
 class Aranha(Thread):
+    """
+    Main class.
 
+    """
     def __init__(self):
         super(Aranha, self).__init__()
         self.daemon = True
-        self.ch = control_handler.ControlHandler()
-        self.nh = network_handler.NetworkHandler(self.ch.apphandler)
+        self.driver = driver.Driver()
+        self.driver.start()
+        self.ch = control_handler.ControlHandler(self.driver)
+        self.nh = network_handler.NetworkHandler(self.ch.apphandler, self.driver)
 
     def run(self):
         while True:

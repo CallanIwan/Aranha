@@ -1,5 +1,6 @@
 #include <bcm2835.h>
 #include <stdio.h>
+#include <iostream>
 #include <stdlib.h>
 #include <unistd.h>
 
@@ -13,9 +14,11 @@
 #define COMMAND_ANGLE		204
 #define COMMAND_EOS			0xFA
 #define COMMAND_NOP			0xFB
+#define COMMAND_START_RESPONSE	160
 
 SpiController::SpiController()
 {
+	lock = 0;
 	if (!bcm2835_init())
 	{
 		printf(TERM_RESET TERM_BOLD TERM_RED"SpiController> ERROR: PERMISSION DENIED TO SPI DRIVER\n");
@@ -29,7 +32,7 @@ SpiController::~SpiController()
 
 void SpiController::Enable()
 {
-	printf(TERM_RESET TERM_BOLD TERM_GREEN "SpiController>" TERM_RESET " INITIALIZING SPI");
+	printf(TERM_RESET TERM_BOLD TERM_GREEN "SpiController>" TERM_RESET " Initializing SPI\n");
 	bcm2835_spi_begin();
 	//Using default spi settings
 	bcm2835_spi_setBitOrder(BCM2835_SPI_BIT_ORDER_MSBFIRST);
@@ -43,76 +46,119 @@ void SpiController::Disable()
 	bcm2835_spi_end();
 	bcm2835_close();
 }
-void SpiController::Update()
-{
-
-}
 
 float SpiController::GetAngle(int motor, LegConfig modifier, bool sync)
 {
+	printf("Error: SpiController::GetAngle() is not yet implemented\n");
 	return 0.0;
-}
-
-#define _BUFSIZE 25
-void autoComplete(uint8_t trigger)
-{
-	while (true)
-	{
-		uint8_t received;
-		uint8_t msg = COMMAND_START;
-		uint8_t receivedbuffer[_BUFSIZE];
-		uint8_t receivedcount = 0;
-		bool enabled = false;
-		for (int i = 0; i<_BUFSIZE; i++)
-		{
-			receivedbuffer[i] = 25;
-		}
-		while (true)
-		{
-			received = bcm2835_spi_transfer(msg);
-			if (received == COMMAND_EOS || receivedcount >= _BUFSIZE) break;
-			if (msg == COMMAND_PROGRESS)
-			{
-				//Wait until the start command has been send, and the controller has returned a NOP over it
-				enabled = true;
-			}
-			msg = COMMAND_PROGRESS;
-			if (enabled)
-			{
-				receivedbuffer[receivedcount] = received;
-				receivedcount++;
-			}
-			//printf("%02X ",received);
-		}
-		for (int i = 0; i<receivedcount; i++)
-		{
-			if (receivedbuffer[i] == trigger)
-			{
-				return;
-			}
-			if (receivedbuffer[i] == 25)
-			{
-				printf(TERM_RESET TERM_BOLD TERM_GREEN "SpiController>" TERM_RESET " Read failed results\n");
-				break;
-			}
-		}
-	}
 }
 
 void SpiController::SetAngle(int motor, int byteAngle, int speed, bool sync)
 {
-	printf(TERM_RESET TERM_BOLD TERM_GREEN "SpiController>" TERM_RESET " Embedded command motor%i to %i @%i\n", motor, byteAngle, speed);
-	char buffer[5] = { COMMAND_START, motor, byteAngle, speed, COMMAND_ANGLE };
+	char buffer[5] = { COMMAND_START, (int)motor, (int)byteAngle, (int)speed, COMMAND_ANGLE };
+	//printf("Setting motor%i to %i (speed: %i)\n", motor, byteAngle, speed);
+	mtx.lock();
 	bcm2835_spi_writenb(buffer, 5);
+	mtx.unlock();
 	if (sync)
 	{
-		printf(TERM_RESET TERM_BOLD TERM_GREEN "SpiController>" TERM_RESET " Synchronizing... \n");
-		autoComplete(motor);
-		printf("done\n");
+		int motors[1] = { motor };
+		//printf("Debug: motorvalue: %i, first array element: %i\n", motor, motors[0]);
+		Synchronize(motors, 1);
 	}
 }
 
-bool SpiController::IsDone(int motor, bool sync)
+#define _BUFSIZE 22
+int SpiController::GetCompleted(int* buffer)
 {
-	return false;
+	mtx.lock();
+	uint8_t received;
+	uint8_t msg = COMMAND_START;
+	int receivedcount = 0;
+	bool enabled = false;
+	for (int i = 0; i < _BUFSIZE; i++)
+	{
+		buffer[i] = 25;
+	}
+
+	//printf("Received:");
+	//Receive spi data
+	while (true)
+	{
+		received = bcm2835_spi_transfer(msg);
+		if (received == COMMAND_EOS || receivedcount >= _BUFSIZE) break;
+		msg = COMMAND_PROGRESS;
+		//Add received byte to buffer, after receiving a reply from the first command byte
+		if (enabled)
+		{
+			buffer[receivedcount] = received;
+			receivedcount++;
+			//printf(" %2i", received);
+		}
+		//The received byte is a response to the first byte we send
+		if (received == COMMAND_START_RESPONSE)
+		{
+			enabled = true;
+		}
+	}
+	//printf("\n");
+	mtx.unlock();
+	return receivedcount;
+}
+bool SpiController::IsCompleted(int motors[], int amount)
+{
+	mtx.lock();
+	//Get the list of completed motors
+	int buffer[_BUFSIZE] = { 25 };
+	int received = GetCompleted(&buffer[0]);
+
+	//Check if the list contains the requested motor
+	bool result = true;
+	for (int i = 0; i < amount; i++)
+	{
+		//printf("Synced:");
+		for (int j = 0; j < received; j++)
+		{
+			if (buffer[j] == motors[i])
+			{
+				//printf(" %i", buffer[j]);
+				break;
+			}
+			if (buffer[j] == 25)
+			{
+				result = false;
+				break;
+			}
+			//If we're at the end, and the above statements failed
+			if (j == received - 1)
+			{
+				result = false;
+			}
+		}
+		//printf("\n");
+		if (!result)
+		{
+			//printf("Failed to sync motor %i\n", motors[i]);
+			break;
+		}
+	}
+	mtx.unlock();
+	return result;
+}
+void SpiController::Synchronize(int motors[], int amount)
+{
+	std::cout << TERM_RESET TERM_BOLD TERM_GREEN "SpiController> " TERM_RESET "Syncing for:";
+	for (int i = 0; i < amount; i++)
+	{
+		std::cout << ' ' << motors[i];
+	}
+	std::cout << std::endl;
+
+	uint16_t attempts = 1;
+	while (!IsCompleted(motors, amount))
+	{
+		attempts++;
+		usleep(1000 * 10);
+	}
+	std::cout << TERM_RESET TERM_BOLD TERM_GREEN "SpiController> " TERM_RESET "Synced after " << attempts << " attempts" << std::endl;
 }

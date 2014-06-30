@@ -23,7 +23,7 @@
 
         <activity
             android:name="com.aranha.spider.app.ConnectionSelect"
-            android:label="@string/title_activity_connection_select" >
+            android:label="@string/app_name" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -47,11 +47,6 @@
             android:name="com.aranha.spider.app.BluetoothDiscoverDevicesActivity"
             android:label="@string/title_activity_bluetooth_discover_devices"
             android:theme="@android:style/Theme.NoTitleBar" >
-        </activity>
-
-        <activity
-            android:name="com.aranha.spider.app.ConnectionTypeActivity"
-            android:label="@string/title_activity_connection_type" >
         </activity>
 
 

@@ -1,47 +1,68 @@
 #include "SyncLock.h"
 
-SyncLock::SyncLock()
+#include <iostream>
+#include <unistd.h>
+
+SyncLock::SyncLock(int amount)
 {
-	for (int i = 0; i < SYNCLOCK_CAPACITY; i++)
-	{
-		syncLocks[i] = 0;
-	}
+	lockLevel = amount;
+	origionalLockLevel = amount;
+	completed = false;
 }
 SyncLock::~SyncLock()
 {
-	
 }
 
-void SyncLock::Lock(int lockID)
+void SyncLock::Lock()
 {
-	if (lockID < 0 || lockID >= SYNCLOCK_CAPACITY)
-		return;
-	syncLocks[lockID]++;
+	mtx.lock();
+	lockLevel++;
+	mtx.unlock();
 }
-void SyncLock::Unlock(int lockID)
+void SyncLock::Unlock()
 {
-	if (lockID < 0 || lockID >= SYNCLOCK_CAPACITY)
-		return;
-	if (syncLocks>0)
+	mtx.lock();
+	if (lockLevel > 1)
 	{
-		syncLocks[lockID]--;
+		lockLevel--;
 	}
 	else
 	{
-		syncLocks[lockID] = 0;
+		//In case the locklevel became negative
+		lockLevel = origionalLockLevel;
+		completed = true;
 	}
-
+	std::cout << TERM_RESET << TERM_BOLD << TERM_CYAN << "SyncLock> " << TERM_RESET << "Unlocked, current lock is " << lockLevel << std::endl;
+	mtx.unlock();
 }
-int SyncLock::GetLockLevel(int lockID)
+int SyncLock::GetLockLevel()
 {
-	if (lockID < 0 || lockID >= SYNCLOCK_CAPACITY)
-		return SYNCLOCK_ERROR;
-	return syncLocks[lockID];
-
+	mtx.lock();
+	return lockLevel;
+	mtx.unlock();
 }
-void SyncLock::WaitForUnlock(int lockID)
+
+bool SyncLock::IsCompleted()
 {
-	if (lockID < 0 || lockID >= SYNCLOCK_CAPACITY)
-		return;
-	while (syncLocks[lockID] > 0){};
+	mtx.lock();
+	bool result = completed;
+	mtx.unlock();
+	return result;
+}
+
+void SyncLock::WaitForUnlock()
+{
+	Unlock();
+	while (!IsCompleted())
+	{
+		usleep(1000 * 20);
+	}
+}
+
+void SyncLock::Reset()
+{
+	mtx.lock();
+	lockLevel = origionalLockLevel;
+	completed = false;
+	mtx.unlock();
 }

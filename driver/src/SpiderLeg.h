@@ -4,22 +4,30 @@
 #include "Globals.h"
 
 #include "Matrix.h"
+#include "Vector3.h"
 #include "LegConfig.h"
 
 class SpiderLeg
 {
 private:
 	//The matrix that is able to manipulate global vectors into vectors relative to the
-	Matrix modifier;
+	Matrix modifier_translate;
+	Matrix modifier_rotate;
 	//The matrix that globalizes
-	Matrix modifier_inv;
-	LegConfig config;
+	Matrix modifier_inv_translate;
+	Matrix modifier_inv_rotate;
 	Spider* master;
+	int currentBody;
+	int currentLeg;
+	int currentToe;
 public:
+	LegConfig config;
+	Vector3 CurrentPosition;
+	Vector3 NeutralPosition;
 	//DO NOT USE THIS CONSTRUCTOR
 	SpiderLeg();
 	//USE THIS ONE
-	SpiderLeg(Spider* master, Matrix modifier, LegConfig configuration);
+	SpiderLeg(Spider* master, Vector3 position, float rotation, LegConfig configuration);
 	~SpiderLeg();
 
 	/**
@@ -33,6 +41,10 @@ public:
 	vector relative to the spiders center to the context of the spiders leg
 	*/
 	void SetAngles(Vector3 position, bool sync);
+	/**
+	This method blocks until the leg has reached its destination
+	*/
+	void Synchronize();
 	/**
 	Transforms a vector from the context of the spider to the individual leg
 	*/

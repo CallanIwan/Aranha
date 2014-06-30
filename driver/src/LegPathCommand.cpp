@@ -13,7 +13,6 @@ LegPathCommand::LegPathCommand(int index, std::queue<Vector3> path)
 	this->path = path;
 }
 
-
 LegPathCommand::~LegPathCommand()
 {
 }
@@ -22,10 +21,10 @@ void LegPathCommand::AddVector(Vector3 item)
 {
 	path.push(item);
 }
-void LegPathCommand::Execute(Spider& spider)
+void LegPathCommand::Execute(Spider* spider)
 {
 	//Get the leg we operate on
-	SpiderLeg* leg = spider.GetLeg(legIndex);
+	SpiderLeg* leg = spider->GetLeg(legIndex);
 	printf(TERM_RESET TERM_BOLD TERM_GREEN "LegPathCommand>" TERM_RESET " Starting path:\n");
 	//While there are elements in the path
 	while (!path.empty())
@@ -37,7 +36,10 @@ void LegPathCommand::Execute(Spider& spider)
 		target.Print();
 		//Move leg to elements position
 		//Movement is synchronized
-		leg->SetAngles(target, true);// path.empty());
+		leg->SetAngles(target, false);// path.empty());
+		printf(TERM_BOLD TERM_GREEN "LegPathCommand>" TERM_RESET " Synchronizing...\n");
+		leg->Synchronize();
+		printf(TERM_BOLD TERM_GREEN "LegPathCommand>" TERM_RESET " Synchronization Completed\n");
 	}
 	printf(TERM_BOLD TERM_GREEN "LegPathCommand>" TERM_RESET " End of path\n");
 	//return when queue is empty

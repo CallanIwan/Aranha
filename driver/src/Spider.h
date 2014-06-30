@@ -10,7 +10,7 @@
 #include "ISpiderCommand.h"
 #include "SpiController.h"
 
-class Spider : public SyncLock
+class Spider
 {
 private:
 	SpiderLeg legs[GLOBAL_LEG_COUNT];
@@ -33,6 +33,8 @@ public:
 
 	//Print all information to console, for debugging
 	void Print();
+	//Gets whether the given leg belongs to the primary or secondary group, true if primary, false otherwise
+	bool IsPrimaryGroup(int legindex);
 };
 
 #endif

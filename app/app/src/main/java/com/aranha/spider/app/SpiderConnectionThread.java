@@ -1,8 +1,6 @@
 package com.aranha.spider.app;
 
 import android.bluetooth.BluetoothSocket;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
@@ -190,7 +188,8 @@ public class SpiderConnectionThread extends Thread {
      */
     public void sendSpiderInstruction(SpiderInstruction instruction, String extraData) {
 
-        Log.d(TAG, "Sending instruction: " + instruction.toString());
+        //Log.d(TAG, "Sending instruction: " + instruction.toString());
+
         String finalString;
         if(extraData.length() == 0)
             finalString = instruction.toString();
@@ -201,11 +200,6 @@ public class SpiderConnectionThread extends Thread {
     }
     public void sendSpiderInstruction(SpiderInstruction instruction) {
         //Log.d(TAG, "Sending instruction: " + instruction.toString().getBytes());
-
-        android.os.Process.getThreadPriority(android.os.Process.myTid());
-        int callingThread = android.os.Process.myTid();
-        System.out.println(" ZWEETBALLEN: " + callingThread);
-
         write(Base64.encode(instruction.toString().getBytes(), Base64.DEFAULT));
     }
 
