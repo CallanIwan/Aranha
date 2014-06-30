@@ -7,14 +7,15 @@ from vision import debug as db
 
 #debug trackbar magic
 #thresholds
-t1 = 100; t2 = 130; t3 = 35
-t4 = 100; t5 = 40; t6 = 100
-t7 = 40; t8 = 100; t9 = 100
-db.setTrackbars([t1, t2, t3, t4, t5, t6, t7, t8, t9])
+#t1 = 5; t2 = 5; t3 = 200
+#t4 = 100; t5 = 40; t6 = 100
+#t7 = 40; t8 = 100; t9 = 100
+#db.setTrackbars([t1, t2, t3])#, t4, t5, t6, t7, t8, t9])
 #squar-y ratio
 s1 = 150
 s2 = 70
-#db.setTrackbars([s1, s2], max=1000)
+
+COMPENSATEYELLOW = False
 
 
 #extracts red, green and blue blobs and tries to filter the possibilities by checking the "square-score
@@ -22,27 +23,39 @@ s2 = 70
 #uses for thresholding
 class CardFinder(object):
     def findColorOrder(self, img):
-        t1 = db.t(0); t2 = db.t(1); t3 = db.t(2)
-        t4 = db.t(3); t5 = db.t(4); t6 = db.t(5)
-        t7 = db.t(6); t8 = db.t(7); t9 = db.t(8)
+        if COMPENSATEYELLOW == True:
+            t1 = 100; t2 = 130; t3 = 35
+            t4 = 100; t5 = 40; t6 = 100
+            t7 = 5; t8 = 5; t9 = 180
+            t4 = db.t(0)
+            t5 = db.t(1)
+            t6 = db.t(2)
+        else:
+            t1 = 100; t2 = 130; t3 = 35
+            t4 = 30; t5 = 30; t6 = 60
+            t7 = 150; t8 = 5; t9 = 200
 
         #basic blurs to remove noise and even out the colors
-        median = img.gaussianBlur((5,5), 5, 7)
-        median = median.medianFilter(5)
+        img = img.copy()
+        median = img.gaussianBlur(3, 3)
+        median = median.medianFilter(7)
 
-        BLUE = (176, 7, 77)
+        #RED = (213, 78, 29) if COMPENSATEYELLOW else (132, 168, 44)
+        GREEN = (213, 78, 29) if COMPENSATEYELLOW else (63, 57, 89)
+        #BLUE = (213, 78, 29) if COMPENSATEYELLOW else (132, 168, 44)
 
         #apply (hueDistance . treshold . invert), multiplies by values which somehow improve detection..
         #todo adaptive thresholding (binarize). perhaps to create a mask for more precise thresholding later on?
         red = (median.hueDistance(SimpleCV.Color.RED, minsaturation=t1, minvalue=t2)   *2).threshold(t3).invert()
         green = (median.hueDistance(SimpleCV.Color.GREEN, minsaturation=t4, minvalue=t5)*1).threshold(t6).invert()
-        bluet = (median.hueDistance(BLUE, minsaturation=t7, minvalue=t8) ).threshold(t9)
-        blue=bluet.invert()
+        blue = (median.hueDistance(SimpleCV.Color.BLUE, minsaturation=t7, minvalue=t8) ).threshold(t9).invert()
+
+        #blue = blue.invert() if COMPENSATEYELLOW == False else blue
 
         #(erode . dilate) to remove "messy" blobs and make the card-blob more square-like
         redBlobs = red.erode(10).dilate(15).findBlobs(minsize=1000)
-        greenBlobs = green.erode(1).dilate(10).findBlobs(minsize=1000)
-        blueBlobs = blue.erode(1).dilate(10).findBlobs(minsize=1000)
+        greenBlobs = green.erode(10).dilate(10).findBlobs(minsize=1000)
+        blueBlobs = blue.erode(10).dilate(10).findBlobs(minsize=1000)
         median.addDrawingLayer(red.dl())
 
         if redBlobs and greenBlobs and blueBlobs:
@@ -71,10 +84,9 @@ class CardFinder(object):
                 return orders
 
         #display failing blob-image here.
-        #db.showImg(red)
-        #db.showImg(green)
+        db.showImg(red)
+        db.showImg(green)
         db.showImg(blue)
-        db.showImg(bluet)
 
         #didn't find all 3 RGB squares
         return None

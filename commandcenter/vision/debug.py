@@ -16,7 +16,8 @@ def nothing(x):
     pass
 
 def t(x):
-    return cv2.getTrackbarPos("t"+`x+1`, "tracks")
+    ret = cv2.getTrackbarPos("t"+`x+1`, "tracks")
+    return ret
 
 #CALL ONLY ONCE
 def setTrackbars(vals, max=255):
