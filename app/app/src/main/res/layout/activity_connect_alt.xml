@@ -11,10 +11,9 @@
     <EditText
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:id="@+id/editText"
-        android:layout_marginTop="86dp"
-        android:text="192.168.0.999"
-        android:layout_alignParentTop="true"
+        android:id="@+id/raspberryName"
+        android:text="192.168.0.1"
+        android:layout_above="@+id/progressBar"
         android:layout_centerHorizontal="true" />
 
     <Button
@@ -23,5 +22,25 @@
         android:text="Connect"
         android:id="@+id/connectWifButton"
         android:layout_centerHorizontal="true"
-        android:layout_below="@+id/editText" />
+        android:layout_below="@+id/raspberryName"
+        android:visibility="gone"/>
+
+    <ProgressBar
+        android:layout_width="200dp"
+        android:layout_height="200dp"
+        android:id="@+id/progressBar"
+        android:layout_centerVertical="true"
+        android:layout_centerHorizontal="true" />
+
+
+    <ImageView
+        android:layout_width="200dp"
+        android:layout_height="200dp"
+        android:src="@drawable/spider_banner_scaled_dark_2"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true"
+        android:layout_below="@+id/progressBar"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true" />
 </RelativeLayout>

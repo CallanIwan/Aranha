@@ -2,7 +2,7 @@
 
 #include "unistd.h"
 
-#define SLEEPTIME	1000 * 20
+#define SLEEPTIME	1000 * 5
 
 ThreadLock::ThreadLock()
 {

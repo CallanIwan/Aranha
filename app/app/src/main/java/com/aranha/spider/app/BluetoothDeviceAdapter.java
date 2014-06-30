@@ -12,7 +12,7 @@ import android.widget.TextView;
 import com.example.spider.app.R;
 
 /**
- * Created by Rutger on 19-05-14.
+ *
  */
 public class BluetoothDeviceAdapter extends ArrayAdapter<BluetoothDevice> {
 

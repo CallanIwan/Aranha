@@ -37,7 +37,13 @@ colorcard = []
 
 
 # handle the data that is received and send data back if necessary
+def handle(handler, data):
+# handle the data that is received and send data back if necessary
 def handle(handler, data, driver):
+
+
+
+
     global colorcard
     global vision_modus
 
@@ -54,17 +60,20 @@ def handle(handler, data, driver):
             handler.encode_and_send(H_SENSOR, json_str)
             print "Sending sensor data"
         elif ord(data) is ord(H_VISION):
+            handler.encode_and_send(H_VISION, "Ballon vinden;Olie analyseren")
             handler.encode_and_send(H_VISION, "kleurenkaart;ballon;olie")
             print "Sending vision scripts"
         elif ord(data) is ord(H_VISION_COLORCARD_TX):
             handler.encode_and_send(H_VISION_COLORCARD_TX, colorcard)
             print "Sending colorcard"
         elif ord(data) is ord(H_VISION_MODUS):
+            handler.encode_and_send(H_VISION_MODUS, vision_modus)
             handler.encode_and_send(H_VISION_MODUS, "" + vision_modus)
             print "sending vision modus"
     elif len(data) > 1:
         header = ord(data[0])
         if header is ord(H_MOV_RECV):
+            print "MOVE: " + data.split(";")[1]
             cmd = data.split(";")[1]
             if cmd == "strafe":
                 # not implemented in spider
@@ -82,6 +91,8 @@ def handle(handler, data, driver):
                 elif cmd == "270":
                     driver.turn(0)
         elif header is ord(H_VISION_COLORCARD):
+            colorcard = json.loads(data)[0]
+            vision_modus = H_VISION_COLORCARD
             if colorcard != "null":
                 colorcard = data
             vision_modus = H_VISION_BALLOON

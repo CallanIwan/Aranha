@@ -20,7 +20,6 @@ Vector3::Vector3(float _x, float _y, float _z)
 
 Vector3::~Vector3()
 {
-	
 }
 
 float Vector3::Length()
@@ -33,39 +32,39 @@ Vector3 Vector3::Zero()
 	return Vector3(0, 0, 0);
 }
 
- Vector3 Vector3::One()
+Vector3 Vector3::One()
 {
 	return Vector3(1, 1, 1);
 }
 
- Vector3 Vector3::UnitX()
+Vector3 Vector3::UnitX()
 {
 	return Vector3(1, 0, 0);
 }
 
- Vector3 Vector3::UnitY()
+Vector3 Vector3::UnitY()
 {
 	return Vector3(0, 1, 0);
 }
 
- Vector3 Vector3::UnitZ()
+Vector3 Vector3::UnitZ()
 {
 	return Vector3(0, 0, 1);
 }
 
- Vector3 Vector3::Forward()
+Vector3 Vector3::Forward()
 {
 	//Forward: positive X
-	 return Vector3::UnitX();
+	return Vector3::UnitX();
 }
 
- Vector3 Vector3::Backward()
+Vector3 Vector3::Backward()
 {
 	//Backward: negative X
-	 return Vector3::UnitX() * -1;
+	return Vector3::UnitX() * -1;
 }
 
- Vector3 Vector3::Left()
+Vector3 Vector3::Left()
 {
 	//Left: -90 degree rotation on forward vector
 	return Vector3(0, 0, 1);
@@ -77,10 +76,10 @@ Vector3 Vector3::Right()
 	return Vector3(0, 0, -1);
 }
 
- Vector3 Vector3::Up()
+Vector3 Vector3::Up()
 {
 	//Up: postive Y
-	 return Vector3::UnitY();
+	return Vector3::UnitY();
 }
 
 Vector3 Vector3::Down()
@@ -138,7 +137,7 @@ Vector3 Vector3::operator* (float const& factor)
 	result.z = this->z * factor;
 	return result;
 }
-Vector3 operator*(float const& factor ,Vector3 const& vec)
+Vector3 operator*(float const& factor, Vector3 const& vec)
 {
 	Vector3 result;
 	result.x = vec.x * factor;
@@ -155,7 +154,7 @@ Vector3 Vector3::operator/(float const& factor)
 	result.z = this->z / factor;
 	return result;
 }
-Vector3 operator/(float const& factor ,Vector3 const& vec)
+Vector3 operator/(float const& factor, Vector3 const& vec)
 {
 	Vector3 result;
 	result.x = vec.x / factor;
@@ -163,7 +162,6 @@ Vector3 operator/(float const& factor ,Vector3 const& vec)
 	result.z = vec.z / factor;
 	return result;
 }
-
 
 Vector3 Vector3::operator+=(Vector3 const& vec)
 {
@@ -227,7 +225,7 @@ Vector3 Vector3::Transform(Vector3 position, Matrix matrix)
 
 void Vector3::Transform(Matrix mat)
 {
-	*this = Vector3::Transform(*this,mat);
+	*this = Vector3::Transform(*this, mat);
 }
 Vector3 Vector3::Clamp(Vector3 source)
 {

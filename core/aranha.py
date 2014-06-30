@@ -12,7 +12,10 @@ import driver
 
 
 class Aranha(Thread):
+    """
+    Main class.
 
+    """
     def __init__(self):
         super(Aranha, self).__init__()
         self.daemon = True

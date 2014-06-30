@@ -13,7 +13,7 @@ class Matrix;
 class Vector3;
 
 class ISpiderCommand;
-class SpiderMoveCommand;
+class MoveCommand;
 class LegPathCommand;
 class SyncCommand;
 class ComplexCommand;

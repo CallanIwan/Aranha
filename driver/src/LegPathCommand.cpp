@@ -13,7 +13,6 @@ LegPathCommand::LegPathCommand(int index, std::queue<Vector3> path)
 	this->path = path;
 }
 
-
 LegPathCommand::~LegPathCommand()
 {
 }

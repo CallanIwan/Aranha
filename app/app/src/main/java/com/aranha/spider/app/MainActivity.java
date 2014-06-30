@@ -1,7 +1,5 @@
 package com.aranha.spider.app;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Locale;
 
 import android.content.ComponentName;
@@ -10,6 +8,8 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
+import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
@@ -26,6 +26,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
@@ -33,10 +34,16 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import com.aranha.spider.app.mjpeg.MjpegInputStream;
+import com.aranha.spider.app.mjpeg.MjpegView;
 import com.example.spider.app.R;
+import com.jjoe64.graphview.*;
+
+import static com.jjoe64.graphview.GraphView.GraphViewData;
 
 
 public class MainActivity extends ActionBarActivity implements ActionBar.TabListener {
@@ -60,12 +67,16 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
     public static final int PAGE_ID_INFO = 1;
     public static final int PAGE_ID_SCRIPTS = 2;
 
-    static ArrayAdapter sScriptsAdapter;
-    static SpiderControllerService sSpiderControllerService;
-    static Class<? extends SpiderControllerService> spiderControllerServiceType;
-    static boolean sIsConnectedToService = false;
-    static ImageView sImageView = null;
-    static String sScriptList = null;
+    ArrayAdapter sScriptsAdapter;
+    SpiderControllerService mSpiderControllerService;
+    Class<? extends SpiderControllerService> spiderControllerServiceType;
+    boolean mIsConnectedToService = false;
+    ImageView sImageView = null;
+    public boolean isCameraEnabled = false;
+    public boolean isWifiCameraSetup = false;
+    String sScriptList = null;
+    Class<? extends SpiderControllerService> mSelectedConnectServiceClass;
+    private boolean isRunningScript = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -133,7 +144,7 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
         super.onResume();
 
         if(mViewPager.getCurrentItem() == 0) {
-            setCameraEnabled(true);
+            //setCameraEnabled(true);
         }
     }
 
@@ -141,15 +152,16 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
     protected void onStop() {
         super.onStop();
 
-        setCameraEnabled(false);
-        if (sIsConnectedToService) { // Unbind from the service
+        //setCameraEnabled(false);
+        if (mIsConnectedToService) { // Unbind from the service
             unbindService(mConnection);
-            sIsConnectedToService = false;
+            mIsConnectedToService = false;
         }
     }
 
     public void bindToService(Class<? extends SpiderControllerService> serviceClass) {
-        if(!sIsConnectedToService) {
+        if(!mIsConnectedToService) {
+            mSelectedConnectServiceClass = serviceClass;
             Intent intent = new Intent(this, serviceClass);
             bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
         }
@@ -163,16 +175,17 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
         @Override
         public void onServiceConnected(ComponentName className, IBinder service) {
             // Get the bluetoothService class via BluetoothBinder.
-            sSpiderControllerService = ((SpiderControllerService.SpiderControllerServiceBinder)service).getService();
-            sSpiderControllerService.setActivityMessenger(mSpiderMessenger);
-            sSpiderControllerService.send(SpiderInstruction.requestScriptList);
-            sIsConnectedToService = true;
-            Log.d(TAG, "SpiderController service is connected");
+            mSpiderControllerService = ((SpiderControllerService.SpiderControllerServiceBinder)service).getService();
+            mSpiderControllerService.setActivityMessenger(mSpiderMessenger);
+            Log.d(TAG, "Sending Script request");
+            mSpiderControllerService.send(SpiderInstruction.requestScriptList);
+            mIsConnectedToService = true;
+            Log.d(TAG, "SpiderController service is connected" + mSpiderControllerService.getClass().getName());
         }
 
         @Override
         public void onServiceDisconnected(ComponentName arg0) {
-            sIsConnectedToService = false;
+            mIsConnectedToService = false;
             Log.d(TAG, "SpiderController disconnected");
         }
     };
@@ -180,8 +193,8 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
     /**
      * Receives all the messages from the Bluetooth service
      */
-    final Messenger mSpiderMessenger = new Messenger(new BluetoothServiceMessageHandler());
-    class BluetoothServiceMessageHandler extends Handler {
+    final Messenger mSpiderMessenger = new Messenger(new SpiderServiceMessageHandler());
+    class SpiderServiceMessageHandler extends Handler {
         @Override
         public void handleMessage(Message msg) {
             switch (SpiderController.SpiderMessages[msg.what]) {
@@ -204,33 +217,86 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
 
                 case CONNECTION_CLOSED:
                 case CONNECTION_LOST:
-                    startActivity(new Intent(MainActivity.this, ConnectActivity.class));
-                    Toast.makeText(MainActivity.this, "Lost Connection to the spider!", Toast.LENGTH_LONG).show();
+                    Intent connectActivity;
+
+                    if(mSelectedConnectServiceClass != null) {
+                        //connectActivity = new Intent(MainActivity.this, ConnectActivity.class);
+                        //connectActivity.putExtra("ServiceClass", mSelectedConnectServiceClass.getName());
+                        connectActivity = new Intent(MainActivity.this, ConnectionSelect.class);
+                    }else {
+                        connectActivity = new Intent(MainActivity.this, ConnectionSelect.class);
+                    }
+                    startActivity(connectActivity);
+                    Toast.makeText(MainActivity.this, "Lost Connection to the spider!", Toast.LENGTH_SHORT).show();
                     break;
 
             }
         }
     }
 
-    private static int CAMERA_UPDATE_DELAY = 1000;
-    private static Handler requestCameraImagesHandler = new Handler();
-    private static Runnable requestCameraImagesRunnable = new Runnable() {
-        @Override
-        public void run() {
-            if(sSpiderControllerService != null) {
-                sSpiderControllerService.send(SpiderInstruction.requestCameraImage);
-                requestCameraImagesHandler.postDelayed(this, CAMERA_UPDATE_DELAY);
-            }
+    public void toggleCameraEnabled() {
+        setCameraEnabled(!isCameraEnabled);
+    }
+    public void setCameraEnabled(boolean value) {
+        Log.d(TAG,"setCameraEnabled( " + value + " )");
+        if(mSpiderControllerService != null)
+            mSpiderControllerService.setCameraEnabled(this, value);
+    }
+
+    MjpegView imageSurfaceView;
+
+    public void setWifiCameraStreamEnabled(boolean value) {
+        if(!value) {
+            if(imageSurfaceView != null) imageSurfaceView.stopPlayback();
+            return;
         }
-    };
-    public static void setCameraEnabled(boolean value) {
-        if(value) {
-            requestCameraImagesHandler.postDelayed(requestCameraImagesRunnable, CAMERA_UPDATE_DELAY);
-            Log.d(TAG, "Camera is ON");
+
+        if(isWifiCameraSetup) {
+            isCameraEnabled = true;
+            imageSurfaceView.startPlayback();
         }
         else {
-            requestCameraImagesHandler.removeCallbacks(requestCameraImagesRunnable);
+            if (!isCameraEnabled) {
+
+                isCameraEnabled = true;
+                imageSurfaceView.setVisibility(View.VISIBLE);
+                imageSurfaceView.setDisplayMode(MjpegView.SIZE_BEST_FIT);
+                String URL = "http://10.0.0.2:8080/?action=stream&d=.mjpeg";
+
+                isWifiCameraSetup = true;
+
+                // Get an inputstream for the camera. THis has to be executed on a seperate thread because
+                // it's not allowed to do internet stuff on the main UI thread.
+                (new AsyncTask<String, MjpegInputStream, MjpegInputStream>() {
+                    @Override
+                    protected MjpegInputStream doInBackground(String... strings) {
+                        return MjpegInputStream.read(strings[0]);
+                    }
+
+                    protected void onPostExecute(MjpegInputStream result) {
+                        imageSurfaceView.setSource(result);
+                    }
+                }).execute(URL);
+            }
         }
+    }
+
+
+
+    private static int REQUEST_INFO_DELAY = 1000;
+    private static Handler requestSpiderInfoHandler = new Handler();
+    private Runnable requestSpiderInfoRunnable = new Runnable() {
+        @Override
+        public void run() {
+            mSpiderControllerService.send(SpiderInstruction.requestSpiderInfo);
+            requestSpiderInfoHandler.postDelayed(this, REQUEST_INFO_DELAY);
+        }
+    };
+    public void setRequestSpiderInfoEnabled(boolean value) {
+        if(value)
+            requestSpiderInfoHandler.postDelayed(requestSpiderInfoRunnable, REQUEST_INFO_DELAY);
+        else
+            requestSpiderInfoHandler.removeCallbacks(requestSpiderInfoRunnable);
     }
 
 
@@ -245,7 +311,7 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
 
         switch(tab.getPosition()) {
             case 0:
-                setCameraEnabled(true);
+                //setCameraEnabled(true);
                 break;
             case 1:
                 setCameraEnabled(false);
@@ -277,8 +343,17 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
         @Override
         public Fragment getItem(int position) {
             // getItem is called to instantiate the fragment for the given page.
-            // Return a PlaceholderFragment (defined as a static inner class below).
-            return PlaceholderFragment.newInstance(position + 1);
+            // Return a Fragment (defined as a static inner class below).
+            switch (position + 1) {
+                case PAGE_ID_CONTROL + 1:
+                    return mainControlFragment;
+                case PAGE_ID_INFO + 1:
+                    return spiderInformationFragment;
+                case PAGE_ID_SCRIPTS + 1:
+                    return scriptsFragment;
+                default:
+                    return new Fragment();
+            }
         }
 
         @Override
@@ -301,100 +376,70 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
         }
     }
 
-    /**
-     * Creates the views for each of the tabs
-     */
-    public static class PlaceholderFragment extends Fragment  {
-        /**
-         * The fragment argument representing the section number for this
-         * fragment.
-         */
-        private static final String ARG_SECTION_NUMBER = "section_number";
-
-        /**
-         * Returns a new instance of this fragment for the given section
-         * number.
-         */
-        public static PlaceholderFragment newInstance(int sectionNumber) {
-            PlaceholderFragment fragment = new PlaceholderFragment();
-            Bundle args = new Bundle();
-            args.putInt(ARG_SECTION_NUMBER, sectionNumber);
-            fragment.setArguments(args);
-            return fragment;
-        }
-
-        public PlaceholderFragment() {
-        }
-
+    private Fragment mainControlFragment = new Fragment() {
         @Override
         public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+            View rootView = inflater.inflate(R.layout.fragment_main_control, container, false);
 
-            // Unpack Arguments
-            //
-            int sectionNumber = getArguments().getInt(ARG_SECTION_NUMBER);
-
-            // Select Proper View
-            //
-            View rootView = null;
-            switch (sectionNumber) {
-                case PAGE_ID_CONTROL + 1:
-                    rootView = inflater.inflate(R.layout.fragment_main_control, container, false);
-                    createTabFragment_Control(rootView);
-                    break;
-                case PAGE_ID_INFO + 1:
-                    rootView = inflater.inflate(R.layout.fragment_main_leg_control, container, false);
-                    createTabFragment_legControl(rootView);
-                    break;
-                case PAGE_ID_SCRIPTS + 1:
-                    rootView = inflater.inflate(R.layout.fragment_main_scripts, container, false);
-                    createTabFragment_scripts(rootView);
-                    break;
-            }
-
-            return rootView;
-        }
-
-
-        public void createTabFragment_Control(View rootView) {
             Button leftArrowButton = (Button)rootView.findViewById(R.id.leftArrowButton);
             Button rightArrowButton = (Button)rootView.findViewById(R.id.rightArrowButton);
             Button upArrowButton = (Button)rootView.findViewById(R.id.upArrowButton);
             Button downArrowButton = (Button)rootView.findViewById(R.id.downArrowButton);
+            Button leftRotateArrowButton = (Button)rootView.findViewById(R.id.leftRotateArrowButton);
+            Button rightRotateArrowButton = (Button)rootView.findViewById(R.id.rightRotateArrowButton);
 
-            MainActivity.sImageView = (ImageView)rootView.findViewById(R.id.imageView);
-            MainActivity.sImageView.setOnClickListener(controlOnClickListener);
+            sImageView = (ImageView)rootView.findViewById(R.id.imageView);
+            sImageView.setOnTouchListener(controlOnClickListener);
+            //sImageView.setVisibility(View.INVISIBLE);
+            imageSurfaceView = (MjpegView) rootView.findViewById(R.id.imageSurfaceView);
+            imageSurfaceView.setVisibility(View.INVISIBLE);
 
-            leftArrowButton.setOnClickListener(controlOnClickListener);
-            rightArrowButton.setOnClickListener(controlOnClickListener);
-            upArrowButton.setOnClickListener(controlOnClickListener);
-            downArrowButton.setOnClickListener(controlOnClickListener);
+            leftArrowButton.setOnTouchListener(controlOnClickListener);
+            rightArrowButton.setOnTouchListener(controlOnClickListener);
+            upArrowButton.setOnTouchListener(controlOnClickListener);
+            downArrowButton.setOnTouchListener(controlOnClickListener);
+            leftRotateArrowButton.setOnTouchListener(controlOnClickListener);
+            rightRotateArrowButton.setOnTouchListener(controlOnClickListener);
+
+            return rootView;
         }
+    };
 
-        public View.OnClickListener controlOnClickListener = new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
+    private Fragment spiderInformationFragment = new Fragment() {
+        @Override
+        public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+            View rootView = inflater.inflate(R.layout.fragment_main_information, container, false);
 
-                if(sIsConnectedToService) {
-                    if (view.getId() == R.id.leftArrowButton) {
-                        sSpiderControllerService.send(SpiderInstruction.move, "270");
-                    } else if (view.getId() == R.id.rightArrowButton) {
-                        sSpiderControllerService.send(SpiderInstruction.move, "90");
-                    } else if (view.getId() == R.id.downArrowButton) {
-                        sSpiderControllerService.send(SpiderInstruction.move, "180");
-                    } else if (view.getId() == R.id.upArrowButton) {
-                        sSpiderControllerService.send(SpiderInstruction.move, "0");
-                    } else if (view.getId() == R.id.imageView) {
-                        setCameraEnabled(false);
-                    }
-                }
-            }
-        };
 
-        public void createTabFragment_legControl(View rootView) {
-            //TODO: Create controls
+            // init example series data
+            GraphViewSeries exampleSeries = new GraphViewSeries(new GraphViewData[] {
+                    new GraphViewData(1, 100)
+                    , new GraphViewData(2, 99)
+                    , new GraphViewData(3, 98)
+                    , new GraphViewData(4, 75)
+            });
+
+            GraphView graphView = new LineGraphView(
+                    MainActivity.this // context
+                    , "Accu" // heading
+            );
+            graphView.getGraphViewStyle().setHorizontalLabelsColor(Color.BLACK);
+            graphView.getGraphViewStyle().setVerticalLabelsColor(Color.BLACK);
+            graphView.addSeries(exampleSeries); // data
+
+            LinearLayout layout = (LinearLayout) rootView.findViewById(R.id.graphLinearLayout1);
+            layout.addView(graphView);
+
+
+            return rootView;
         }
+    };
 
-        public void createTabFragment_scripts(View rootView) {
+
+    private Fragment scriptsFragment = new Fragment() {
+        @Override
+        public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+            View rootView = inflater.inflate(R.layout.fragment_main_scripts, container, false);
 
             // Set up list adapter
             //
@@ -403,22 +448,117 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
             listViewScripts.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                 @Override
                 public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                //TODO: Item (Script) selected
+                    //TODO: Item (Script) selected
+                    //listViewScripts
+
+                    //System.out.println("HAHA");
                 }
             });
 
             // Set up GO/STOP button
             //
-            ImageButton goButton = (ImageButton)rootView.findViewById(R.id.imageButton);
+            final ImageButton goButton = (ImageButton) rootView.findViewById(R.id.imageButton);
             goButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                listViewScripts.setEnabled(false);
-                //TODO: Run script
+
+                    if(!isRunningScript) {
+                        String scriptChoice = (String)sScriptsAdapter.getItem((int)listViewScripts.getSelectedItemId());
+
+                        isRunningScript = true;
+                        listViewScripts.setEnabled(false);
+                        Log.d(TAG, "Script running " + scriptChoice);
+                        goButton.setBackgroundResource(R.drawable.stop);
+                        mSpiderControllerService.send(SpiderInstruction.startScript, scriptChoice);
+                    } else {
+                        isRunningScript = false;
+                        listViewScripts.setEnabled(true);
+                        Log.d(TAG, "Stop script!");
+                        goButton.setBackgroundResource(R.drawable.go);
+                        mSpiderControllerService.send(SpiderInstruction.stopScript);
+                    }
+
                 }
             });
+
+            return rootView;
         }
+    };
+
+    private static int SEND_RECURRING_INSTRUCTION_TIME = 1000;
+    private SpiderInstruction currentInstruction;
+    private String currentInstructionExtraData;
+    private static Handler sendRecurringInstructionHandler = new Handler();
+    private Runnable sendRecurringInstructionRunnable = new Runnable() {
+        @Override
+        public void run() {
+            mSpiderControllerService.send(currentInstruction, currentInstructionExtraData);
+            System.out.println("Sending: " + currentInstruction);
+            sendRecurringInstructionHandler.postDelayed(this, SEND_RECURRING_INSTRUCTION_TIME);
+        }
+    };
+
+    public void sendRecurringInstruction(SpiderInstruction instruction, String extraData) {
+        this.currentInstruction = instruction;
+        this.currentInstructionExtraData = extraData;
+        sendRecurringInstructionHandler.postDelayed(sendRecurringInstructionRunnable, SEND_RECURRING_INSTRUCTION_TIME);
     }
+    public void stopRecurringInstruction() {
+        sendRecurringInstructionHandler.removeCallbacks(sendRecurringInstructionRunnable);
+    }
+
+    public View.OnTouchListener controlOnClickListener = new View.OnTouchListener() {
+
+        @Override
+        public boolean onTouch(View view, MotionEvent motionEvent) {
+
+            int action = motionEvent.getAction();
+            if (action == MotionEvent.ACTION_DOWN) {
+                if(mIsConnectedToService) {
+                    if (view.getId() == R.id.leftArrowButton) {
+                        mSpiderControllerService.send(SpiderInstruction.move, "strafe;l");
+                        //sendRecurringInstruction(SpiderInstruction.move, "270");
+                    } else if (view.getId() == R.id.rightArrowButton) {
+                        mSpiderControllerService.send(SpiderInstruction.move, "strafe;r");
+                        //sendRecurringInstruction(SpiderInstruction.move,  "90");
+                    } else if (view.getId() == R.id.downArrowButton) {
+                        mSpiderControllerService.send(SpiderInstruction.move, "180");
+                        //sendRecurringInstruction(SpiderInstruction.move, "180");
+                    } else if (view.getId() == R.id.upArrowButton) {
+                        mSpiderControllerService.send(SpiderInstruction.move, "0");
+                        //sendRecurringInstruction(SpiderInstruction.move, "0");
+                    } else if (view.getId() == R.id.imageView) {
+                        toggleCameraEnabled();
+                    } else if (view.getId() == R.id.leftRotateArrowButton) {
+                        mSpiderControllerService.send(SpiderInstruction.move, "270");
+                        //sendRecurringInstruction(SpiderInstruction.move, "strafe;l");
+                    } else if (view.getId() == R.id.rightRotateArrowButton) {
+                        mSpiderControllerService.send(SpiderInstruction.move, "90");
+                        //sendRecurringInstruction(SpiderInstruction.move, "strafe;r");
+                    } else if (view.getId() == R.id.resetButton) {
+                        mSpiderControllerService.send(SpiderInstruction.relax);
+                    } else if (view.getId() == R.id.upButton) {
+                        mSpiderControllerService.send(SpiderInstruction.spiderUpDown, "u");
+                    } else if (view.getId() == R.id.downButton) {
+                        mSpiderControllerService.send(SpiderInstruction.spiderUpDown, "d");
+                    }
+                }
+
+            } else if (action == MotionEvent.ACTION_UP) {
+
+                stopRecurringInstruction();
+
+                System.out.println("Release");
+            }
+
+
+            return false;
+        }
+    };
+
+    // --------------------------------------------
+    //    Options menu
+    // --------------------------------------------
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -437,8 +577,13 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
             return true;
         }
         else if( id == R.id.action_disconnect) {
-            sSpiderControllerService.disconnect();
-            startActivity(new Intent(MainActivity.this, ConnectActivity.class));
+            //startActivity(new Intent(MainActivity.this, ConnectionSelect.class));
+            mSpiderControllerService.disconnect();
+        }
+        else if( id == 16908332 /* Back button */ ) {
+            mSpiderControllerService.disconnect();
+            //startActivity(new Intent(MainActivity.this, ConnectionSelect.class));
+            return true;
         }
 
         return super.onOptionsItemSelected(item);

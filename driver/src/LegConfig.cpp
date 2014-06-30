@@ -10,7 +10,6 @@ LegConfig::LegConfig()
 }
 LegConfig::~LegConfig()
 {
-
 }
 void LegConfig::SetLength(float body, float leg, float toe)
 {
